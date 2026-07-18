@@ -1,4 +1,5 @@
 import random
+import re
 import string
 from datetime import datetime
 from functools import wraps
@@ -141,10 +142,16 @@ def get_cart_public():
     return jsonify(_cart_payload(draft))
 
 
-@pos_bp.route("/api/product/barcode/<barcode>")
+@pos_bp.route("/api/product/barcode/<path:barcode>")
 @login_required
 def lookup_barcode(barcode):
     product = Product.query.filter_by(barcode_number=barcode, is_active=True).first()
+    if not product:
+        # 2D scanner may have read a printed product QR label (a full URL)
+        # instead of a traditional 1D barcode - pull the product id out of it.
+        match = re.search(r"/product/(\d+)", barcode)
+        if match:
+            product = Product.query.filter_by(id=int(match.group(1)), is_active=True).first()
     if not product:
         return jsonify({"error": "not_found"}), 404
     return jsonify({
@@ -285,6 +292,16 @@ def _complete_transaction(txn):
 @login_required
 def receipt_pdf(transaction_id):
     txn = Transaction.query.get_or_404(transaction_id)
+    buf = generate_pos_receipt_pdf(txn)
+    return send_file(buf, mimetype="application/pdf", as_attachment=False, download_name=f"{txn.transaction_number}.pdf")
+
+
+@pos_bp.route("/r/<transaction_number>.pdf")
+def public_receipt_pdf(transaction_number):
+    # Unauthenticated by design: this is the target of the QR code printed on
+    # the receipt itself, scanned by the customer's phone camera, keyed by
+    # the non-sequential transaction_number rather than the raw row id.
+    txn = Transaction.query.filter_by(transaction_number=transaction_number).first_or_404()
     buf = generate_pos_receipt_pdf(txn)
     return send_file(buf, mimetype="application/pdf", as_attachment=False, download_name=f"{txn.transaction_number}.pdf")
 

@@ -1,4 +1,4 @@
-from flask import current_app
+from flask import current_app, url_for
 from escpos.printer import Dummy
 
 
@@ -56,6 +56,16 @@ def print_pos_receipt(txn):
     p.set(bold=False, width=1, height=1)
     p.text(f"Paid via: {(txn.payment_method or '').replace('_', ' ').upper()}\n")
     p.set(align="center")
+
+    receipt_url = url_for("pos.public_receipt_pdf", transaction_number=txn.transaction_number, _external=True)
+    try:
+        p.qr(receipt_url, size=6)
+        p.text("Scan to view this receipt online\n")
+    except Exception:
+        # Native ESC/POS QR command isn't supported by every printer model -
+        # a missing on-paper QR shouldn't stop the rest of the receipt.
+        pass
+
     p.text("\nThank you for shopping with us!\n")
     p.cut()
 

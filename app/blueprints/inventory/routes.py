@@ -3,7 +3,7 @@ import string
 from datetime import datetime, date
 from urllib.parse import quote
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash
+from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file
 from flask_login import current_user
 
 from app.extensions import db
@@ -13,6 +13,7 @@ from app.models import (
 )
 from app.blueprints.pos.routes import roles_required
 from app.services.audit import log_activity
+from app.services.qr import generate_qr_png
 
 
 def _default_location():
@@ -108,6 +109,22 @@ def edit_product(product_id):
 
     categories_list = Category.query.filter_by(is_active=True).order_by(Category.name).all()
     return render_template("inventory/product_form.html", product=product, categories=categories_list)
+
+
+@inventory_bp.route("/products/<int:product_id>/qr.png")
+@roles_required(*MANAGER_ROLES)
+def product_qr(product_id):
+    product = Product.query.get_or_404(product_id)
+    url = url_for("storefront.product_detail", product_id=product.id, _external=True)
+    buf = generate_qr_png(url)
+    return send_file(buf, mimetype="image/png")
+
+
+@inventory_bp.route("/products/<int:product_id>/label")
+@roles_required(*MANAGER_ROLES)
+def product_label(product_id):
+    product = Product.query.get_or_404(product_id)
+    return render_template("inventory/product_label.html", product=product)
 
 
 @inventory_bp.route("/products/<int:product_id>/toggle", methods=["POST"])

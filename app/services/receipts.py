@@ -1,17 +1,23 @@
 from io import BytesIO
 
-from flask import current_app
+from flask import current_app, url_for
 from flask_mail import Message
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
 from app.extensions import mail
+from app.services.qr import generate_qr_png
 
 
-def _draw_header(p, y, receipt_number):
+def _draw_header(p, y, receipt_number, qr_url=None):
     store_name = current_app.config["STORE_NAME"]
     store_tin = current_app.config["STORE_TIN"]
+
+    if qr_url:
+        qr_img = ImageReader(generate_qr_png(qr_url))
+        p.drawImage(qr_img, 160 * mm, y - 20 * mm, width=25 * mm, height=25 * mm)
 
     p.setFont("Helvetica-Bold", 16)
     p.drawString(20 * mm, y, store_name)
@@ -75,7 +81,8 @@ def generate_pos_receipt_pdf(txn):
     p = canvas.Canvas(buf, pagesize=A4)
     y = 280 * mm
 
-    y = _draw_header(p, y, txn.transaction_number)
+    qr_url = url_for("pos.public_receipt_pdf", transaction_number=txn.transaction_number, _external=True)
+    y = _draw_header(p, y, txn.transaction_number, qr_url=qr_url)
 
     lines = [
         (item.product.name, float(item.quantity), float(item.unit_price), float(item.line_total))
@@ -112,7 +119,8 @@ def generate_online_order_receipt_pdf(order):
     p = canvas.Canvas(buf, pagesize=A4)
     y = 280 * mm
 
-    y = _draw_header(p, y, order.order_number)
+    qr_url = url_for("storefront.order_status", order_number=order.order_number, _external=True)
+    y = _draw_header(p, y, order.order_number, qr_url=qr_url)
 
     lines = [
         (item.product.name, float(item.quantity), float(item.unit_price), float(item.line_total))

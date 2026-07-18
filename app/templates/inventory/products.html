@@ -27,6 +27,7 @@
         {% else %}
           <span class="badge status-pill-declined">Inactive</span>
         {% endif %}
+        <a href="{{ url_for('inventory.product_label', product_id=product.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Label</a>
         <a href="{{ url_for('inventory.edit_product', product_id=product.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Edit</a>
         <form method="post" action="{{ url_for('inventory.toggle_product', product_id=product.id) }}">
           <button type="submit" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">

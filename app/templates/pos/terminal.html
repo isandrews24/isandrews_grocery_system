@@ -167,9 +167,12 @@ async function lookupProduct(barcode) {
 }
 
 // Manual entry field (also what a wedge-mode USB/Bluetooth scanner types into if it has focus).
+// Autofocused so a hardware scanner can be aimed and fired without clicking into the page first.
 const barcodeInput = document.getElementById('barcode-input');
+barcodeInput.focus();
 barcodeInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && barcodeInput.value.trim()) {
+  // Some 1D/2D scanners are configured to send Tab instead of Enter as the terminator.
+  if ((e.key === 'Enter' || e.key === 'Tab') && barcodeInput.value.trim()) {
     e.preventDefault();
     lookupProduct(barcodeInput.value.trim());
     barcodeInput.value = '';
@@ -179,15 +182,16 @@ barcodeInput.addEventListener('keydown', (e) => {
 // Keyboard-wedge listener: catches fast scanner keystrokes even when no field has focus.
 let scanBuffer = '';
 let scanTimeout = null;
-document.addEventListener('keypress', (e) => {
+document.addEventListener('keydown', (e) => {
   const activeTag = document.activeElement.tagName;
   if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
 
-  if (e.key === 'Enter') {
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
     if (scanBuffer.length > 3) lookupProduct(scanBuffer);
     scanBuffer = '';
     clearTimeout(scanTimeout);
-  } else {
+  } else if (e.key.length === 1) {
     scanBuffer += e.key;
     clearTimeout(scanTimeout);
     scanTimeout = setTimeout(() => { scanBuffer = ''; }, 100);
