@@ -23,7 +23,7 @@
     function ghs(v) { return 'GH₵' + Number(v).toFixed(2); }
 
     async function poll() {
-      const res = await fetch('/pos/api/cart/public');
+      const res = await fetch('{{ url_for("pos.get_cart_public") }}');
       const data = await res.json();
       const itemsEl = document.getElementById('items');
       itemsEl.innerHTML = '';

@@ -13,6 +13,12 @@
   {% block extra_head %}{% endblock %}
 </head>
 <body>
+  <script>
+    // Non-empty when this app is mounted under a subpath (e.g. /grocery) instead of
+    // the domain root - used to prefix hand-written fetch() URLs that can't go through
+    // Jinja's url_for() because they're built at runtime with a JS variable in the path.
+    const APP_ROOT = "{{ request.script_root }}";
+  </script>
   <div class="utility-bar">
     <div class="container d-flex justify-content-between align-items-center flex-wrap py-1">
       <span class="small">Fresh groceries across Ghana</span>
@@ -40,6 +46,11 @@
               {% endif %}
             </a>
           </li>
+          {% if current_customer %}
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('account.dashboard') }}"><i class="bi bi-person-circle"></i> {{ current_customer.name.split(' ')[0] }}</a></li>
+          {% else %}
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('account.login') }}"><i class="bi bi-person"></i> Log in</a></li>
+          {% endif %}
           {% if current_user.is_authenticated %}
             {% if current_user.role == 'cashier' %}
               <li class="nav-item"><a class="nav-link" href="{{ url_for('pos.terminal') }}">POS</a></li>

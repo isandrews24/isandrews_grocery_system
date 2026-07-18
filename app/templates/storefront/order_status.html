@@ -92,7 +92,7 @@ function markPaid() {
 
 if (simulateBtn) {
   simulateBtn.addEventListener('click', async () => {
-    await fetch(`/order/${orderNumber}/simulate-approve`, { method: 'POST' });
+    await fetch(`${APP_ROOT}/order/${orderNumber}/simulate-approve`, { method: 'POST' });
     markPaid();
   });
 }
@@ -102,7 +102,7 @@ if ("{{ order.payment_status }}" !== "paid") {
   const MAX_TRIES = 36; // ~3 minutes at 5s intervals
   const poll = setInterval(async () => {
     tries += 1;
-    const res = await fetch(`/order/${orderNumber}/status`);
+    const res = await fetch(`${APP_ROOT}/order/${orderNumber}/status`);
     const data = await res.json();
     if (data.payment_status === 'paid') {
       clearInterval(poll);

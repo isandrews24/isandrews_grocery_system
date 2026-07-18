@@ -84,13 +84,13 @@ function renderCart(data) {
 }
 
 async function refreshCart() {
-  const res = await fetch('/pos/api/cart');
+  const res = await fetch(APP_ROOT + '/pos/api/cart');
   const data = await res.json();
   renderCart(data);
 }
 
 async function addItem(productId) {
-  const res = await fetch(`/pos/api/add/${productId}`, { method: 'POST' });
+  const res = await fetch(`${APP_ROOT}/pos/api/add/${productId}`, { method: 'POST' });
   const data = await res.json();
   renderCart(data);
 }
@@ -105,7 +105,7 @@ async function charge() {
   const phone = document.getElementById('payment-phone').value;
   const statusEl = document.getElementById('payment-status');
 
-  const res = await fetch('/pos/api/charge', {
+  const res = await fetch(APP_ROOT + '/pos/api/charge', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ payment_method: method, phone_number: phone })
@@ -135,7 +135,7 @@ async function charge() {
 
 async function simulateApprove() {
   if (!currentTransactionId) return;
-  await fetch(`/pos/api/charge/${currentTransactionId}/simulate-approve`, { method: 'POST' });
+  await fetch(`${APP_ROOT}/pos/api/charge/${currentTransactionId}/simulate-approve`, { method: 'POST' });
   location.reload();
 }
 
@@ -156,7 +156,7 @@ setInterval(refreshCart, 4000);
 
 async function lookupProduct(barcode) {
   const feedback = document.getElementById('barcode-feedback');
-  const res = await fetch(`/pos/api/product/barcode/${encodeURIComponent(barcode)}`);
+  const res = await fetch(`${APP_ROOT}/pos/api/product/barcode/${encodeURIComponent(barcode)}`);
   if (res.status === 404) {
     feedback.innerHTML = `<div class="alert alert-warning py-1 px-2 small mb-0">No product found for barcode ${barcode}.</div>`;
     return;

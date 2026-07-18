@@ -29,6 +29,7 @@ def create_app(config_class=Config):
     from app.blueprints.admin.routes import admin_bp
     from app.blueprints.api.routes import api_bp
     from app.blueprints.inventory.routes import inventory_bp
+    from app.blueprints.account.routes import account_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(storefront_bp)
@@ -36,15 +37,19 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(inventory_bp)
+    app.register_blueprint(account_bp)
 
     @app.context_processor
     def inject_globals():
+        from app.blueprints.account.routes import get_current_customer
+
         cart = session.get("cart", {})
         cart_count = sum(item["quantity"] for item in cart.values())
         return {
             "store_name": app.config["STORE_NAME"],
             "currency": app.config["CURRENCY"],
             "cart_count": cart_count,
+            "current_customer": get_current_customer(),
         }
 
     @app.template_filter("ghs")

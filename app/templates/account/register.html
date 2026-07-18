@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Create account &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <h1 class="h4 text-brand-slate mb-4">Create your account</h1>
+    <p class="text-muted small mb-4">We'll verify your email and phone number before you can place an order.</p>
+
+    <form method="post" class="cart-panel p-4">
+      <div class="mb-3">
+        <label class="form-label small">Full name</label>
+        <input type="text" name="name" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Email</label>
+        <input type="email" name="email" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Phone number</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light">+233</span>
+          <input type="tel" name="phone" class="form-control" pattern="[0-9]{9,10}" placeholder="24 XXX XXXX" required>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Password</label>
+        <input type="password" name="password" class="form-control" minlength="8" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Confirm password</label>
+        <input type="password" name="confirm_password" class="form-control" minlength="8" required>
+      </div>
+      <button type="submit" class="btn btn-brand w-100">Create account</button>
+      <p class="text-center small text-muted mt-3 mb-0">
+        Already have an account? <a href="{{ url_for('account.login') }}">Log in</a>
+      </p>
+    </form>
+  </div>
+</div>
+{% endblock %}

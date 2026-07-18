@@ -7,6 +7,14 @@
   <a href="{{ url_for('inventory.purchase_orders') }}" class="btn btn-outline-brand btn-sm">Back</a>
 </div>
 
+<div class="cart-panel p-3 mb-3">
+  <label for="scan-input" class="form-label small text-muted mb-1">
+    <i class="bi bi-upc-scan"></i> Scan item to receive
+  </label>
+  <input type="text" id="scan-input" class="form-control" placeholder="Scan barcode or QR label &mdash; each scan adds 1 unit" autocomplete="off">
+  <div id="scan-feedback" class="mt-2"></div>
+</div>
+
 <form method="post" class="cart-panel p-4">
   <table class="table">
     <thead>
@@ -14,12 +22,12 @@
     </thead>
     <tbody>
       {% for item in po.items %}
-        <tr>
+        <tr id="po-row-{{ item.id }}" data-barcode="{{ item.product.barcode_number or '' }}" data-product-id="{{ item.product.id }}" data-name="{{ item.product.name }}">
           <td>{{ item.product.name }}</td>
           <td>{{ item.quantity_ordered }}</td>
           <td>{{ item.quantity_received or 0 }}</td>
           <td style="max-width: 140px;">
-            <input type="number" step="0.001" name="received_{{ item.id }}" class="form-control form-control-sm" placeholder="0">
+            <input type="number" step="0.001" id="qty_{{ item.id }}" name="received_{{ item.id }}" class="form-control form-control-sm" placeholder="0">
           </td>
         </tr>
       {% endfor %}
@@ -27,4 +35,67 @@
   </table>
   <button type="submit" class="btn btn-brand w-100">Confirm receipt</button>
 </form>
+
+<script>
+const scanInput = document.getElementById('scan-input');
+const feedback = document.getElementById('scan-feedback');
+scanInput.focus();
+
+function matchByBarcode(barcode) {
+  return document.querySelector(`tr[data-barcode="${CSS.escape(barcode)}"]`);
+}
+
+function matchByUrl(scanned) {
+  // A scanned QR product label encodes a full product-detail URL rather than
+  // a plain barcode - pull the product id out of it and match on that instead.
+  const m = scanned.match(/\/product\/(\d+)/);
+  if (!m) return null;
+  return document.querySelector(`tr[data-product-id="${m[1]}"]`);
+}
+
+function handleScan(value) {
+  const scanned = value.trim();
+  if (!scanned) return;
+
+  const row = matchByBarcode(scanned) || matchByUrl(scanned);
+  if (!row) {
+    feedback.innerHTML = `<div class="alert alert-warning py-1 px-2 small mb-0">"${scanned}" isn't on this purchase order.</div>`;
+    return;
+  }
+
+  const qtyInput = row.querySelector('input[type="number"]');
+  qtyInput.value = (parseFloat(qtyInput.value) || 0) + 1;
+  row.classList.add('table-success');
+  setTimeout(() => row.classList.remove('table-success'), 800);
+
+  feedback.innerHTML = `<div class="alert alert-success py-1 px-2 small mb-0">Added 1 &times; ${row.dataset.name} (now receiving ${qtyInput.value}).</div>`;
+}
+
+scanInput.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === 'Tab') && scanInput.value.trim()) {
+    e.preventDefault();
+    handleScan(scanInput.value);
+    scanInput.value = '';
+  }
+});
+
+// Keyboard-wedge listener: catches fast scanner keystrokes even when no field has focus.
+let scanBuffer = '';
+let scanTimeout = null;
+document.addEventListener('keydown', (e) => {
+  const activeTag = document.activeElement.tagName;
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
+
+  if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    if (scanBuffer.length > 3) handleScan(scanBuffer);
+    scanBuffer = '';
+    clearTimeout(scanTimeout);
+  } else if (e.key.length === 1) {
+    scanBuffer += e.key;
+    clearTimeout(scanTimeout);
+    scanTimeout = setTimeout(() => { scanBuffer = ''; }, 100);
+  }
+});
+</script>
 {% endblock %}

@@ -60,7 +60,7 @@ class Product(db.Model):
     tax_rate = db.Column(db.Numeric(5, 2), nullable=False, default=15.0)
     is_taxable = db.Column(db.Boolean, default=True)
     unit_of_measure = db.Column(db.String(30), nullable=False, default="each")
-    image_url = db.Column(db.String(255))
+    image_url = db.Column(db.String(500))
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -155,6 +155,24 @@ class Customer(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=True)
     loyalty_points = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    password_hash = db.Column(db.String(255))
+    email_verified = db.Column(db.Boolean, nullable=False, default=False)
+    phone_verified = db.Column(db.Boolean, nullable=False, default=False)
+    email_otp_code = db.Column(db.String(6))
+    email_otp_expires_at = db.Column(db.DateTime)
+    phone_otp_code = db.Column(db.String(6))
+    phone_otp_expires_at = db.Column(db.DateTime)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return bool(self.password_hash) and check_password_hash(self.password_hash, password)
+
+    @property
+    def is_fully_verified(self):
+        return self.email_verified and self.phone_verified
 
 
 class PosSession(db.Model):

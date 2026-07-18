@@ -10,6 +10,7 @@ from app.services.tax import calculate_tax_breakdown, totals_for_cart
 from app.services.payments import initiate_payment, PROVIDER_LABELS
 from app.services.receipts import generate_online_order_receipt_pdf
 from app.tasks import email_order_receipt as email_order_receipt_task
+from app.blueprints.account.routes import get_current_customer
 
 storefront_bp = Blueprint(
     "storefront", __name__, template_folder="../../templates/storefront"
@@ -157,29 +158,22 @@ def cart():
 
 @storefront_bp.route("/checkout", methods=["GET", "POST"])
 def checkout():
+    customer = get_current_customer()
+    if not customer:
+        flash("Create an account or log in to place an order.", "warning")
+        return redirect(url_for("account.login", next=url_for("storefront.checkout")))
+
     lines, totals = _cart_products()
     if not lines:
         flash("Your cart is empty.", "warning")
         return redirect(url_for("storefront.home"))
 
     if request.method == "POST":
-        name = request.form.get("name", "").strip()
-        phone = request.form.get("phone", "").strip()
-        email = request.form.get("email", "").strip() or None
+        phone = request.form.get("phone", "").strip() or customer.phone
         delivery_method = request.form.get("delivery_method", "click_and_collect")
         region = request.form.get("region", "Other")
         address = request.form.get("address", "").strip() or None
         payment_method = request.form.get("payment_method", "mtn_momo")
-
-        if not name or not phone:
-            flash("Name and phone number are required.", "danger")
-            return redirect(url_for("storefront.checkout"))
-
-        customer = Customer.query.filter_by(phone=phone).first()
-        if not customer:
-            customer = Customer(name=name, phone=phone, email=email)
-            db.session.add(customer)
-            db.session.flush()
 
         delivery_fee = DELIVERY_FEES.get(region, DELIVERY_FEES["Other"]) if delivery_method == "home_delivery" else 0.0
 

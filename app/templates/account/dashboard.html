@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My account &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">My account</h1>
+  <a href="{{ url_for('account.logout') }}" class="btn btn-outline-brand btn-sm">Log out</a>
+</div>
+
+<div class="cart-panel p-3 mb-4">
+  <p class="mb-1"><strong>{{ customer.name }}</strong></p>
+  <p class="mb-1 text-muted small">{{ customer.email }} &middot; {{ customer.phone }}</p>
+  <p class="mb-0 small">
+    <span class="badge status-pill-paid">Email verified</span>
+    <span class="badge status-pill-paid">Phone verified</span>
+  </p>
+</div>
+
+<h2 class="h6 text-brand-slate mb-3">Order history</h2>
+<div class="cart-panel">
+  {% for order in orders %}
+    <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <a href="{{ url_for('storefront.order_status', order_number=order.order_number) }}" class="fw-semibold text-decoration-none">{{ order.order_number }}</a>
+        <p class="mb-0 text-muted small">{{ order.placed_at.strftime('%Y-%m-%d %H:%M') }} &middot; {{ order.status.replace('_', ' ').title() }}</p>
+      </div>
+      <span class="fw-semibold">{{ order.total_amount | ghs }}</span>
+    </div>
+  {% else %}
+    <p class="text-muted p-3 mb-0">No orders yet. <a href="{{ url_for('storefront.home') }}">Start shopping</a>.</p>
+  {% endfor %}
+</div>
+{% endblock %}

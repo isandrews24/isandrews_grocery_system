@@ -9,14 +9,7 @@
     <form method="post" id="checkout-form">
       <div class="cart-panel p-3 mb-3">
         <h6 class="text-brand-slate">Your details</h6>
-        <div class="mb-2">
-          <label class="form-label small">Full name</label>
-          <input type="text" name="name" class="form-control" required>
-        </div>
-        <div class="mb-2">
-          <label class="form-label small">Email (optional)</label>
-          <input type="email" name="email" class="form-control">
-        </div>
+        <p class="mb-0 small">Ordering as <strong>{{ current_customer.name }}</strong> &middot; {{ current_customer.email }}</p>
       </div>
 
       <div class="cart-panel p-3 mb-3">
@@ -62,7 +55,7 @@
             <label class="form-label small">Mobile money number</label>
             <div class="input-group mb-2">
               <span class="input-group-text bg-light">+233</span>
-              <input type="tel" name="phone" id="momo-phone" class="form-control" pattern="[0-9]{9,10}" placeholder="24 XXX XXXX" required>
+              <input type="tel" name="phone" id="momo-phone" class="form-control" pattern="[0-9]{9,10}" placeholder="24 XXX XXXX" value="{{ current_customer.phone }}" required>
             </div>
           </div>
 

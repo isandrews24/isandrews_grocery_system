@@ -27,7 +27,9 @@ def roles_required(*roles):
         @wraps(f)
         def wrapped(*args, **kwargs):
             if not current_user.is_authenticated:
-                return redirect(url_for("auth.login", next=request.path))
+                # script_root is empty unless this app is mounted under a subpath
+                # elsewhere - request.path alone would drop that prefix.
+                return redirect(url_for("auth.login", next=request.script_root + request.path))
             if current_user.role not in roles:
                 flash("You don't have permission to access that.", "danger")
                 return redirect(url_for("auth.login"))
