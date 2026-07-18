@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}POS terminal &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h4 text-brand-slate mb-0">POS terminal</h1>
+  <a href="{{ url_for('pos.display') }}" target="_blank" class="btn btn-outline-brand btn-sm">
+    <i class="bi bi-display"></i> Open customer display
+  </a>
+</div>
+
+<div class="row">
+  <div class="col-lg-7 mb-4">
+    <div class="input-group mb-3">
+      <span class="input-group-text"><i class="bi bi-upc-scan"></i></span>
+      <input type="text" id="barcode-input" class="form-control" placeholder="Scan barcode or type it and press Enter" autocomplete="off">
+    </div>
+    <div id="barcode-feedback" class="mb-2"></div>
+    <ul class="nav nav-pills mb-3">
+      <li class="nav-item"><a class="nav-link active" href="#" data-category="">All</a></li>
+      {% for cat in categories %}
+        <li class="nav-item"><a class="nav-link" href="#" data-category="{{ cat.id }}">{{ cat.name }}</a></li>
+      {% endfor %}
+    </ul>
+    <div class="row row-cols-3 row-cols-md-4 g-2" id="product-grid">
+      {% for product in products %}
+        <div class="col product-tile-wrap" data-category="{{ product.category_id or '' }}">
+          <button class="pos-tile btn w-100 h-100 d-flex flex-column align-items-center justify-content-center p-2"
+                  data-product-id="{{ product.id }}" onclick="addItem({{ product.id }})">
+            <span class="small fw-semibold">{{ product.name }}</span>
+            <span class="small text-muted">{{ product.unit_price | ghs }}</span>
+          </button>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cart-panel p-3">
+      <div class="d-flex justify-content-between mb-2">
+        <span class="fw-semibold">Order</span>
+        <span class="text-muted small">{{ draft.transaction_number }}</span>
+      </div>
+      <div id="cart-items"></div>
+      <div class="border-top pt-2 mt-2">
+        <div class="d-flex justify-content-between small"><span>Subtotal</span><span id="sum-subtotal">GH&#8373;0.00</span></div>
+        <div class="d-flex justify-content-between small text-muted"><span>VAT + levies</span><span id="sum-tax">GH&#8373;0.00</span></div>
+        <div class="d-flex justify-content-between fw-bold fs-5"><span>Total</span><span id="sum-total">GH&#8373;0.00</span></div>
+      </div>
+
+      <div class="mt-3" id="payment-section">
+        <label class="form-label small">Payment method</label>
+        <select id="payment-method" class="form-select mb-2">
+          {% for method, label in provider_labels.items() %}
+            <option value="{{ method }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+        <input type="tel" id="payment-phone" class="form-control mb-2 d-none" placeholder="Customer phone e.g. 0241234567">
+        <button class="btn btn-brand w-100" onclick="charge()">Charge</button>
+      </div>
+
+      <div id="payment-status" class="mt-3"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentTransactionId = null;
+
+function ghs(v) { return 'GH₵' + Number(v).toFixed(2); }
+
+function renderCart(data) {
+  const itemsEl = document.getElementById('cart-items');
+  itemsEl.innerHTML = '';
+  data.items.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'd-flex justify-content-between align-items-center py-1 small';
+    row.innerHTML = `<span>${item.quantity} &times; ${item.name}</span><span>${ghs(item.line_total)}</span>`;
+    itemsEl.appendChild(row);
+  });
+  document.getElementById('sum-subtotal').textContent = ghs(data.subtotal);
+  document.getElementById('sum-tax').textContent = ghs(data.tax_amount);
+  document.getElementById('sum-total').textContent = ghs(data.total_amount);
+}
+
+async function refreshCart() {
+  const res = await fetch('/pos/api/cart');
+  const data = await res.json();
+  renderCart(data);
+}
+
+async function addItem(productId) {
+  const res = await fetch(`/pos/api/add/${productId}`, { method: 'POST' });
+  const data = await res.json();
+  renderCart(data);
+}
+
+document.getElementById('payment-method').addEventListener('change', (e) => {
+  const needsPhone = e.target.value !== 'cash';
+  document.getElementById('payment-phone').classList.toggle('d-none', !needsPhone);
+});
+
+async function charge() {
+  const method = document.getElementById('payment-method').value;
+  const phone = document.getElementById('payment-phone').value;
+  const statusEl = document.getElementById('payment-status');
+
+  const res = await fetch('/pos/api/charge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ payment_method: method, phone_number: phone })
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    statusEl.innerHTML = `<div class="alert alert-warning py-2 small mb-0">Add items before charging.</div>`;
+    return;
+  }
+
+  currentTransactionId = data.transaction_id;
+
+  if (data.payment_status === 'completed') {
+    statusEl.innerHTML = `<div class="alert alert-success py-2 small mb-0">Payment received. Starting new order&hellip;</div>`;
+    setTimeout(() => location.reload(), 1500);
+  } else {
+    statusEl.innerHTML = `
+      <div class="alert py-2 small mb-2 status-pill-pending">
+        USSD prompt sent to customer's phone. Waiting for approval&hellip;
+      </div>
+      <button class="btn btn-outline-brand btn-sm w-100" onclick="simulateApprove()">Demo: simulate customer approval</button>
+    `;
+  }
+  refreshCart();
+}
+
+async function simulateApprove() {
+  if (!currentTransactionId) return;
+  await fetch(`/pos/api/charge/${currentTransactionId}/simulate-approve`, { method: 'POST' });
+  location.reload();
+}
+
+document.querySelectorAll('[data-category]').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('[data-category]').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    const cat = link.getAttribute('data-category');
+    document.querySelectorAll('.product-tile-wrap').forEach(tile => {
+      tile.style.display = (!cat || tile.dataset.category === cat) ? '' : 'none';
+    });
+  });
+});
+
+refreshCart();
+setInterval(refreshCart, 4000);
+
+async function lookupProduct(barcode) {
+  const feedback = document.getElementById('barcode-feedback');
+  const res = await fetch(`/pos/api/product/barcode/${encodeURIComponent(barcode)}`);
+  if (res.status === 404) {
+    feedback.innerHTML = `<div class="alert alert-warning py-1 px-2 small mb-0">No product found for barcode ${barcode}.</div>`;
+    return;
+  }
+  const product = await res.json();
+  feedback.innerHTML = `<div class="alert alert-success py-1 px-2 small mb-0">Added ${product.name}.</div>`;
+  await addItem(product.id);
+}
+
+// Manual entry field (also what a wedge-mode USB/Bluetooth scanner types into if it has focus).
+const barcodeInput = document.getElementById('barcode-input');
+barcodeInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && barcodeInput.value.trim()) {
+    e.preventDefault();
+    lookupProduct(barcodeInput.value.trim());
+    barcodeInput.value = '';
+  }
+});
+
+// Keyboard-wedge listener: catches fast scanner keystrokes even when no field has focus.
+let scanBuffer = '';
+let scanTimeout = null;
+document.addEventListener('keypress', (e) => {
+  const activeTag = document.activeElement.tagName;
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
+
+  if (e.key === 'Enter') {
+    if (scanBuffer.length > 3) lookupProduct(scanBuffer);
+    scanBuffer = '';
+    clearTimeout(scanTimeout);
+  } else {
+    scanBuffer += e.key;
+    clearTimeout(scanTimeout);
+    scanTimeout = setTimeout(() => { scanBuffer = ''; }, 100);
+  }
+});
+</script>
+{% endblock %}

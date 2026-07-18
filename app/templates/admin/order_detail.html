@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">{{ order.order_number }}</h1>
+  <div class="d-flex gap-2">
+    {% if order.status not in ('pending', 'delivered', 'cancelled') %}
+      <a href="{{ url_for('admin.pick_order', order_id=order.id) }}" class="btn btn-brand btn-sm">
+        <i class="bi bi-check2-square"></i> Pick order ({{ order.pick_progress }})
+      </a>
+    {% endif %}
+    <a href="{{ url_for('admin.picking_slip', order_id=order.id) }}" target="_blank" class="btn btn-outline-brand btn-sm">
+      <i class="bi bi-printer"></i> Picking slip
+    </a>
+    <a href="{{ url_for('admin.orders') }}" class="btn btn-outline-brand btn-sm">Back to orders</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="cart-panel mb-3">
+      <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          Items
+          {% if order.status not in ('pending', 'delivered', 'cancelled') %}
+            <span class="badge {{ 'status-pill-paid' if order.is_fully_picked else 'status-pill-pending' }} ms-1">
+              Picked {{ order.pick_progress }}
+            </span>
+          {% endif %}
+        </span>
+        {% if order.status == 'delivered' %}
+          <span class="badge status-pill-paid">{{ status_labels[order.status] }}</span>
+        {% elif order.status == 'cancelled' %}
+          <span class="badge status-pill-declined">{{ status_labels[order.status] }}</span>
+        {% else %}
+          <span class="badge status-pill-pending">{{ status_labels[order.status] }}</span>
+        {% endif %}
+      </div>
+      {% for item in order.items %}
+        <div class="d-flex align-items-center justify-content-between p-3 {{ 'border-bottom' if not loop.last }}">
+          <div class="d-flex align-items-center gap-2">
+            <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="rounded" style="width: 44px; height: 44px; object-fit: cover;">
+            <span>{{ item.quantity }} &times; {{ item.product.name }}</span>
+          </div>
+          <span>{{ item.line_total | ghs }}</span>
+        </div>
+      {% endfor %}
+      <div class="p-3 border-top">
+        <div class="d-flex justify-content-between small"><span>Subtotal</span><span>{{ order.subtotal | ghs }}</span></div>
+        <div class="d-flex justify-content-between small text-muted"><span>VAT + levies</span><span>{{ order.tax_amount | ghs }}</span></div>
+        {% if order.delivery_fee %}
+          <div class="d-flex justify-content-between small"><span>Delivery fee</span><span>{{ order.delivery_fee | ghs }}</span></div>
+        {% endif %}
+        <div class="d-flex justify-content-between fw-bold border-top pt-2 mt-2"><span>Total</span><span>{{ order.total_amount | ghs }}</span></div>
+      </div>
+    </div>
+
+    {% if order.status not in ('delivered', 'cancelled') %}
+      <div class="cart-panel p-3 d-flex gap-2">
+        {% if next_status %}
+          <form method="post" action="{{ url_for('admin.advance_order', order_id=order.id) }}" class="flex-fill">
+            <button type="submit" class="btn btn-brand w-100">Mark as {{ status_labels[next_status] }}</button>
+          </form>
+        {% endif %}
+        <button type="button" class="btn btn-outline-brand" onclick="cancelOrder()">Cancel order</button>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cart-panel p-3 mb-3">
+      <h6 class="text-brand-slate mb-2">Customer</h6>
+      <p class="mb-1">{{ order.customer.name }}</p>
+      <p class="mb-1 text-muted small">{{ order.customer.phone }}</p>
+      {% if order.customer.email %}<p class="mb-0 text-muted small">{{ order.customer.email }}</p>{% endif %}
+    </div>
+
+    <div class="cart-panel p-3 mb-3">
+      <h6 class="text-brand-slate mb-2">Delivery</h6>
+      <p class="mb-1">{{ order.delivery_method.replace('_', ' ') }}</p>
+      {% if order.delivery_method == 'home_delivery' %}
+        <p class="mb-1 text-muted small">{{ order.delivery_region }}</p>
+        <p class="mb-0 text-muted small">{{ order.delivery_address }}</p>
+      {% endif %}
+    </div>
+
+    <div class="cart-panel p-3">
+      <h6 class="text-brand-slate mb-2">Payment</h6>
+      <p class="mb-1">{{ (order.payment_method or '').replace('_', ' ').upper() }}</p>
+      {% if order.payment_status == 'paid' %}
+        <span class="badge status-pill-paid">Paid</span>
+      {% else %}
+        <span class="badge status-pill-pending">Pending</span>
+      {% endif %}
+    </div>
+
+    {% if order.notes %}
+      <div class="cart-panel p-3 mt-3">
+        <h6 class="text-brand-slate mb-2">Notes</h6>
+        <p class="mb-0 small text-muted" style="white-space: pre-line;">{{ order.notes }}</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<form id="cancel-form" method="post" action="{{ url_for('admin.cancel_order', order_id=order.id) }}" class="d-none">
+  <input type="hidden" name="reason" id="cancel-reason">
+</form>
+
+<script>
+function cancelOrder() {
+  const reason = prompt('Reason for cancelling this order:');
+  if (reason === null) return;
+  document.getElementById('cancel-reason').value = reason;
+  document.getElementById('cancel-form').submit();
+}
+</script>
+{% endblock %}

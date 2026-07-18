@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Purchase orders &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">Purchase orders</h1>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('inventory.suppliers') }}" class="btn btn-outline-brand btn-sm">Suppliers</a>
+    <a href="{{ url_for('inventory.new_purchase_order') }}" class="btn btn-brand btn-sm">New purchase order</a>
+  </div>
+</div>
+
+<div class="cart-panel">
+  {% for po in purchase_orders %}
+    <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <p class="mb-0 fw-semibold">{{ po.po_number }} &middot; {{ po.supplier.name }}</p>
+        <p class="mb-0 text-muted small">{{ po.created_at.strftime('%Y-%m-%d') }} &middot; {{ po.total_amount | ghs }}</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        {% if po.status == 'draft' %}
+          <span class="badge status-pill-pending">Draft</span>
+          <form method="post" action="{{ url_for('inventory.send_purchase_order', po_id=po.id) }}">
+            <button type="submit" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Mark sent</button>
+          </form>
+        {% elif po.status == 'sent' %}
+          <span class="badge status-pill-pending">Sent</span>
+          <a href="{{ url_for('inventory.receive_purchase_order', po_id=po.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Receive goods</a>
+        {% elif po.status == 'partial' %}
+          <span class="badge status-pill-pending">Partial</span>
+          <a href="{{ url_for('inventory.receive_purchase_order', po_id=po.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Receive more</a>
+        {% else %}
+          <span class="badge status-pill-paid">Received</span>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p class="text-muted p-3 mb-0">No purchase orders yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Stock takes &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">Stock takes</h1>
+</div>
+
+<div class="row">
+  <div class="col-lg-4 mb-4">
+    <div class="cart-panel p-3">
+      <h6 class="text-brand-slate mb-3">Schedule a stock take</h6>
+      <form method="post" action="{{ url_for('inventory.new_stock_take') }}">
+        <label class="form-label small">Date</label>
+        <input type="date" name="scheduled_date" class="form-control mb-2" required>
+        <button type="submit" class="btn btn-brand w-100">Generate count sheet</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-lg-8 mb-4">
+    <div class="cart-panel">
+      {% for take in stock_takes %}
+        <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+          <div>
+            <p class="mb-0 fw-semibold">{{ take.scheduled_date }}</p>
+            <p class="mb-0 text-muted small">{{ take.items | length }} products</p>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            {% if take.status == 'scheduled' %}
+              <span class="badge status-pill-pending">Scheduled</span>
+              <a href="{{ url_for('inventory.count_stock_take', stock_take_id=take.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Count</a>
+            {% elif take.status == 'review' %}
+              <span class="badge status-pill-pending">Review</span>
+              <a href="{{ url_for('inventory.review_stock_take', stock_take_id=take.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Review</a>
+            {% else %}
+              <span class="badge status-pill-paid">Approved</span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted p-3 mb-0">No stock takes yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Staff login &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-4">
+    <div class="cart-panel p-4">
+      <h1 class="h5 text-brand-slate mb-3">Staff login</h1>
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label small">Username</label>
+          <input type="text" name="username" class="form-control" autofocus required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Password</label>
+          <input type="password" name="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-brand w-100">Log in</button>
+      </form>
+      <p class="text-muted small mt-3 mb-0">Demo accounts: <code>admin</code> / <code>cashier1</code> (password: <code>ChangeMe123!</code>)</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Track your order &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="cart-panel p-4 text-center">
+      <i class="bi bi-truck fs-1" style="color: var(--brand-accent);"></i>
+      <h1 class="h5 text-brand-slate mt-2 mb-3">Track your order</h1>
+      <form method="post">
+        <input type="text" name="order_number" class="form-control mb-3" placeholder="e.g. ORD-20260718-1234" required>
+        <button type="submit" class="btn btn-brand w-100">Track order</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

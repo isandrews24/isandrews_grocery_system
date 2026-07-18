@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}New purchase order &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">New purchase order</h1>
+  <a href="{{ url_for('inventory.purchase_orders') }}" class="btn btn-outline-brand btn-sm">Back</a>
+</div>
+
+<form method="post" class="cart-panel p-4">
+  <label class="form-label small">Supplier</label>
+  <select name="supplier_id" class="form-select mb-3" required>
+    {% for s in suppliers %}
+      <option value="{{ s.id }}">{{ s.name }}</option>
+    {% endfor %}
+  </select>
+
+  <div id="po-lines">
+    <div class="row g-2 mb-2 po-line">
+      <div class="col-6">
+        <select name="product_id" class="form-select">
+          {% for p in products %}
+            <option value="{{ p.id }}">{{ p.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-3">
+        <input type="number" step="0.001" name="quantity" class="form-control" placeholder="Qty">
+      </div>
+      <div class="col-3">
+        <input type="number" step="0.01" name="unit_cost" class="form-control" placeholder="Unit cost">
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="btn btn-outline-brand btn-sm mb-3" onclick="addLine()">+ Add line</button>
+  <button type="submit" class="btn btn-brand w-100">Create purchase order</button>
+</form>
+
+<template id="po-line-template">
+  <div class="row g-2 mb-2 po-line">
+    <div class="col-6">
+      <select name="product_id" class="form-select">
+        {% for p in products %}
+          <option value="{{ p.id }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-3">
+      <input type="number" step="0.001" name="quantity" class="form-control" placeholder="Qty">
+    </div>
+    <div class="col-3">
+      <input type="number" step="0.01" name="unit_cost" class="form-control" placeholder="Unit cost">
+    </div>
+  </div>
+</template>
+
+<script>
+function addLine() {
+  const template = document.getElementById('po-line-template');
+  document.getElementById('po-lines').appendChild(template.content.cloneNode(true));
+}
+</script>
+{% endblock %}

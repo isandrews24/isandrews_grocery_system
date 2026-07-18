@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% from "storefront/_macros.html" import stars %}
+{% block title %}Shop &middot; {{ store_name }}{% endblock %}
+
+{% set category_icons = {
+  'Beverages': 'bi-cup-straw',
+  'Bakery': 'bi-basket2',
+  'Produce': 'bi-flower1',
+  'Staples': 'bi-box-seam',
+  'Spices & Seasoning': 'bi-droplet',
+  'Dairy & Eggs': 'bi-egg',
+  'Canned & Frozen': 'bi-snow',
+  'Oils': 'bi-droplet-fill',
+  'Snacks': 'bi-cookie',
+} %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-lg-8">
+    <div class="p-4 rounded-3 section-tint animate-fade h-100 d-flex flex-column justify-content-center">
+      <h1 class="h3 text-on-tint mb-1">Fresh groceries, delivered or ready for pickup</h1>
+      <p class="text-on-tint mb-3">Pay with MTN MoMo, Vodafone Cash, AirtelTigo Money or card at checkout.</p>
+      <form class="d-flex" style="max-width: 420px;" method="get">
+        <input type="search" name="q" value="{{ query }}" class="form-control me-2" placeholder="Search products...">
+        <button class="btn btn-brand" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="promo-tile h-100 d-flex flex-column justify-content-center animate-fade">
+      <p class="text-uppercase small mb-1" style="letter-spacing: 0.05em;">This week</p>
+      <p class="h4 mb-1">Up to 20% off</p>
+      <p class="mb-0 small">On staples &amp; spices</p>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <a href="{{ url_for('storefront.home') }}" class="category-pill {{ 'active' if not selected_category }}">
+    <i class="bi bi-grid"></i> All
+  </a>
+  {% for cat in categories %}
+    <a href="{{ url_for('storefront.home', category_id=cat.id) }}" class="category-pill {{ 'active' if selected_category == cat.id }}">
+      <i class="bi {{ category_icons.get(cat.name, 'bi-tag') }}"></i> {{ cat.name }}
+    </a>
+  {% endfor %}
+</div>
+
+{% if flash_products and not selected_category and not query %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 text-brand-slate mb-0"><i class="bi bi-lightning-charge-fill" style="color: var(--brand-accent);"></i> Flash sales</h2>
+  <span class="badge status-pill-pending" id="flash-timer">Time left: --:--:--</span>
+</div>
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-6 g-3 mb-5">
+  {% for product in flash_products %}
+    <div class="col">
+      <div class="card card-product h-100 animate-fade-up">
+        <a href="{{ url_for('storefront.product_detail', product_id=product.id) }}" class="position-relative text-decoration-none">
+          <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-thumb">
+          <span class="badge badge-brand position-absolute top-0 start-0 m-2">Hot</span>
+        </a>
+        <div class="card-body d-flex flex-column p-2">
+          <a href="{{ url_for('storefront.product_detail', product_id=product.id) }}" class="text-decoration-none text-reset">
+            <p class="small mb-1 product-name">{{ product.name }}</p>
+          </a>
+          <p class="fw-bold mb-2 small">{{ product.unit_price | ghs }}</p>
+          <form method="post" action="{{ url_for('storefront.add_to_cart', product_id=product.id) }}" class="mt-auto">
+            <button type="submit" class="btn btn-brand btn-sm w-100" {{ 'disabled' if product.in_stock_qty <= 0 }}>
+              <i class="bi bi-cart-plus"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-lg-3 mb-4">
+    <div class="list-group">
+      <a href="{{ url_for('storefront.home') }}" class="list-group-item list-group-item-action {{ 'active bg-transparent border-0' if not selected_category }}">
+        <i class="bi bi-grid me-1"></i> All categories
+      </a>
+      {% for cat in categories %}
+        <a href="{{ url_for('storefront.home', category_id=cat.id) }}"
+           class="list-group-item list-group-item-action {{ 'fw-bold text-brand-slate' if selected_category == cat.id }}">
+          <i class="bi {{ category_icons.get(cat.name, 'bi-tag') }} me-1"></i> {{ cat.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-9">
+    <h2 class="h5 text-brand-slate mb-3">
+      {% if selected_category %}
+        {{ categories | selectattr('id', 'equalto', selected_category) | map(attribute='name') | first }}
+      {% else %}
+        All products
+      {% endif %}
+    </h2>
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+      {% for product in products %}
+        <div class="col">
+          <div class="card card-product h-100 animate-fade-up">
+            <a href="{{ url_for('storefront.product_detail', product_id=product.id) }}">
+              <img src="{{ product.image_url }}" alt="{{ product.name }}" class="product-thumb">
+            </a>
+            <div class="card-body d-flex flex-column">
+              <a href="{{ url_for('storefront.product_detail', product_id=product.id) }}" class="text-decoration-none text-reset">
+                <p class="mb-1 product-name">{{ product.name }}</p>
+              </a>
+              <p class="text-muted small mb-1">{{ product.category.name if product.category else '' }}</p>
+              <div class="mb-2 text-warning small">
+                {{ stars(product.average_rating) }}
+                {% if product.review_count %}<span class="text-muted">({{ product.review_count }})</span>{% endif %}
+              </div>
+              <p class="fw-bold mb-2">{{ product.unit_price | ghs }}</p>
+              {% if product.in_stock_qty > 0 %}
+                <span class="badge bg-success-subtle text-success mb-2 align-self-start">In stock</span>
+              {% else %}
+                <span class="badge bg-danger-subtle text-danger mb-2 align-self-start">Out of stock</span>
+              {% endif %}
+              <form method="post" action="{{ url_for('storefront.add_to_cart', product_id=product.id) }}" class="mt-auto">
+                <button type="submit" class="btn btn-brand btn-sm w-100" {{ 'disabled' if product.in_stock_qty <= 0 }}>
+                  <i class="bi bi-cart-plus"></i> Add to cart
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted">No products found.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const timerEl = document.getElementById('flash-timer');
+  if (!timerEl) return;
+  let secondsLeft = 4 * 3600 + 46 * 60 + 33;
+  function render() {
+    const h = String(Math.floor(secondsLeft / 3600)).padStart(2, '0');
+    const m = String(Math.floor((secondsLeft % 3600) / 60)).padStart(2, '0');
+    const s = String(secondsLeft % 60).padStart(2, '0');
+    timerEl.textContent = `Time left: ${h}:${m}:${s}`;
+    secondsLeft = secondsLeft > 0 ? secondsLeft - 1 : 0;
+  }
+  render();
+  setInterval(render, 1000);
+})();
+</script>
+{% endblock %}

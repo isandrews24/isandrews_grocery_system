@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit product' if product else 'Add product' }} &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">{{ 'Edit product' if product else 'Add product' }}</h1>
+  <a href="{{ url_for('inventory.products') }}" class="btn btn-outline-brand btn-sm">Back to products</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <form method="post" class="cart-panel p-4">
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label small">Product name</label>
+          <input type="text" name="name" class="form-control" value="{{ product.name if product else '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">SKU</label>
+          <input type="text" name="sku" class="form-control" value="{{ product.sku if product else '' }}" required>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small">Category</label>
+          <select name="category_id" class="form-select">
+            <option value="">Uncategorised</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {{ 'selected' if product and product.category_id == cat.id }}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small">Barcode</label>
+          <input type="text" name="barcode_number" class="form-control" value="{{ product.barcode_number if product else '' }}">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label small">Image URL</label>
+          <input type="url" name="image_url" class="form-control" placeholder="https://..." value="{{ product.image_url if product else '' }}">
+          <div class="form-text">Leave blank to use a generated placeholder image.</div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small">Selling price (GH&#8373;, VAT-inclusive)</label>
+          <input type="number" step="0.01" name="unit_price" class="form-control" value="{{ product.unit_price if product else '' }}" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Cost price (GH&#8373;)</label>
+          <input type="number" step="0.01" name="cost_price" class="form-control" value="{{ product.cost_price if product else '' }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">VAT rate (%)</label>
+          <input type="number" step="0.01" name="tax_rate" class="form-control" value="{{ product.tax_rate if product else 15.0 }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small">Unit of measure</label>
+          <input type="text" name="unit_of_measure" class="form-control" value="{{ product.unit_of_measure if product else 'each' }}">
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+          <div class="form-check">
+            <input type="checkbox" name="is_taxable" class="form-check-input" id="is_taxable" {{ 'checked' if not product or product.is_taxable }}>
+            <label class="form-check-label small" for="is_taxable">Taxable (VAT + NHIL + GetFund apply)</label>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small">Stock on hand</label>
+          <input type="number" step="0.001" name="quantity_on_hand" class="form-control" value="{{ product.inventory.quantity_on_hand if product and product.inventory else 0 }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Reorder level</label>
+          <input type="number" step="0.001" name="reorder_level" class="form-control" value="{{ product.inventory.reorder_level if product and product.inventory else 5 }}">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label small">Reorder quantity</label>
+          <input type="number" step="0.001" name="reorder_quantity" class="form-control" value="{{ product.inventory.reorder_quantity if product and product.inventory else 20 }}">
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-brand w-100 mt-4">{{ 'Save changes' if product else 'Create product' }}</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

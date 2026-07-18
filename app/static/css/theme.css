@@ -1,0 +1,326 @@
+:root {
+  --brand-primary: #1b2a4a;
+  --brand-primary-light: #2c4270;
+  --brand-sidebar: #0f2540;
+  --brand-accent: #d4a017;
+  --brand-accent-light: #f0c33e;
+  --brand-bg: #f6f7fb;
+  --brand-surface: #ffffff;
+  --brand-border: #e5e7eb;
+  --brand-text: #1f2430;
+  --brand-text-muted: #6b7280;
+  --brand-text-inverse: #ffffff;
+
+  --brand-success-bg: #e6f6ee;
+  --brand-success: #1c8a52;
+  --brand-danger-bg: #fdecea;
+  --brand-danger: #c0392b;
+  --brand-warning-bg: #fdf3d9;
+  --brand-warning: #b8860b;
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 4px 10px rgba(15, 23, 42, 0.10);
+  --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.16);
+
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+
+  --bs-primary: var(--brand-primary);
+  --bs-primary-rgb: 27, 42, 74;
+}
+
+body {
+  background-color: var(--brand-bg);
+  color: var(--brand-text);
+  font-family: "Poppins", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulseAccent {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(212, 160, 23, 0); }
+}
+
+.animate-fade-up {
+  animation: fadeInUp var(--transition-base) ease both;
+}
+
+.animate-fade-up:nth-child(2) { animation-delay: 60ms; }
+.animate-fade-up:nth-child(3) { animation-delay: 120ms; }
+.animate-fade-up:nth-child(4) { animation-delay: 180ms; }
+.animate-fade-up:nth-child(5) { animation-delay: 240ms; }
+.animate-fade-up:nth-child(6) { animation-delay: 300ms; }
+
+.animate-fade {
+  animation: fadeIn var(--transition-base) ease both;
+}
+
+.pulse-accent {
+  animation: pulseAccent 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up, .animate-fade, .pulse-accent, .card-product, .btn, .pos-tile {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.utility-bar {
+  background-color: var(--brand-sidebar);
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.utility-bar a {
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+}
+
+.utility-bar a:hover {
+  color: var(--brand-accent-light);
+}
+
+.navbar-brand-grocery {
+  background-color: var(--brand-primary);
+}
+
+.navbar-brand-grocery .navbar-brand,
+.navbar-brand-grocery .nav-link {
+  color: var(--brand-text-inverse) !important;
+  transition: color var(--transition-fast);
+}
+
+.navbar-brand-grocery .nav-link:hover {
+  color: var(--brand-accent-light) !important;
+}
+
+.btn-brand {
+  background-color: var(--brand-accent);
+  border-color: var(--brand-accent);
+  color: var(--brand-text-inverse);
+  font-weight: 600;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-brand:hover {
+  background-color: var(--brand-accent-light);
+  border-color: var(--brand-accent-light);
+  color: var(--brand-primary);
+}
+
+.btn-brand:active {
+  transform: scale(0.97);
+}
+
+.btn-outline-brand {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn-outline-brand:hover {
+  background-color: var(--brand-primary);
+  color: var(--brand-text-inverse);
+}
+
+.btn-outline-brand:active {
+  transform: scale(0.97);
+}
+
+.card-product {
+  border: none;
+  border-radius: 12px;
+  background-color: var(--brand-surface);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+
+.card-product:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.badge-brand {
+  background-color: var(--brand-accent);
+  color: var(--brand-text-inverse);
+}
+
+.section-tint {
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
+  color: var(--brand-text-inverse);
+}
+
+.text-brand-slate {
+  color: var(--brand-primary) !important;
+}
+
+.text-on-tint {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.pos-tile {
+  border-radius: 12px;
+  border: 1px solid var(--brand-border);
+  background-color: var(--brand-surface);
+  min-height: 84px;
+  transition: background-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.pos-tile:hover {
+  background-color: var(--brand-warning-bg);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.pos-tile:active {
+  transform: scale(0.97);
+}
+
+.cart-panel {
+  background-color: var(--brand-surface);
+  border-radius: 12px;
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.display-total {
+  font-weight: 700;
+  color: var(--brand-primary);
+}
+
+.status-pill-paid {
+  background-color: var(--brand-success-bg);
+  color: var(--brand-success);
+}
+
+.status-pill-pending {
+  background-color: var(--brand-warning-bg);
+  color: var(--brand-warning);
+}
+
+.status-pill-declined {
+  background-color: var(--brand-danger-bg);
+  color: var(--brand-danger);
+}
+
+.list-group-item.active.bg-transparent {
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.nav-pills .nav-link.active {
+  background-color: var(--brand-primary);
+}
+
+.momo-card-header {
+  background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
+  color: var(--brand-text-inverse);
+  padding: 0.75rem 1rem;
+}
+
+.btn-check:checked + .btn-outline-brand {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: var(--brand-text-inverse);
+}
+
+.pending-spinner-wrap {
+  width: 90px;
+  height: 90px;
+  position: relative;
+  margin: 0 auto;
+}
+
+.pending-spinner-wrap .spinner-border {
+  width: 90px;
+  height: 90px;
+  border-width: 5px;
+  color: var(--brand-accent);
+  opacity: 0.35;
+  position: absolute;
+  inset: 0;
+}
+
+.pending-spinner-wrap .pending-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--brand-accent);
+}
+
+.pending-result-icon {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  color: var(--brand-text-inverse);
+  margin: 0 auto;
+}
+
+.alert {
+  animation: fadeIn var(--transition-base) ease both;
+}
+
+.promo-tile {
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-accent-light) 100%);
+  color: var(--brand-primary);
+}
+
+.category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--brand-border);
+  background-color: var(--brand-surface);
+  color: var(--brand-text);
+  font-size: 13px;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.category-pill:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+
+.category-pill.active {
+  background-color: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: var(--brand-text-inverse);
+}
+
+.product-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 12px 12px 0 0;
+  background-color: var(--brand-bg);
+}
+
+.product-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.4em;
+  font-size: 14px;
+}

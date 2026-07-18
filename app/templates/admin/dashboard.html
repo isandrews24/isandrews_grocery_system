@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Dashboard &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">Dashboard</h1>
+  <a href="{{ url_for('admin.audit_log') }}" class="btn btn-outline-brand btn-sm">View audit log</a>
+</div>
+
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+  <div class="col">
+    <div class="cart-panel p-3 d-flex align-items-center gap-3">
+      <span class="badge-brand rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-cash-coin"></i></span>
+      <div>
+        <p class="text-muted small mb-1">Today's sales</p>
+        <p class="fs-4 fw-bold mb-0">{{ todays_sales | ghs }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="cart-panel p-3 d-flex align-items-center gap-3">
+      <span class="badge-brand rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-bag-check"></i></span>
+      <div>
+        <p class="text-muted small mb-1">Orders</p>
+        <p class="fs-4 fw-bold mb-0">{{ orders_today }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="cart-panel p-3 d-flex align-items-center gap-3">
+      <span class="badge-brand rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-hourglass-split"></i></span>
+      <div>
+        <p class="text-muted small mb-1">Pending payments</p>
+        <p class="fs-4 fw-bold mb-0">{{ pending_count }}</p>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="cart-panel p-3 d-flex align-items-center gap-3">
+      <span class="badge-brand rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;"><i class="bi bi-phone"></i></span>
+      <div>
+        <p class="text-muted small mb-1">Mobile money success</p>
+        <p class="fs-4 fw-bold mb-0">{{ success_rate }}%</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-7 mb-4">
+    <h6 class="text-brand-slate">Recent transactions</h6>
+    <div class="cart-panel">
+      {% for payment in recent_payments %}
+        <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+          <div>
+            <p class="mb-0">{{ payment.reference_number or '—' }}</p>
+            <p class="mb-0 text-muted small">{{ payment.payment_method.replace('_', ' ') }} &middot; {{ payment.created_at.strftime('%H:%M') }}</p>
+          </div>
+          <div class="text-end">
+            <p class="mb-0 fw-bold">{{ payment.amount | ghs }}</p>
+            {% if payment.status == 'completed' %}
+              <span class="badge status-pill-paid">Paid</span>
+            {% elif payment.status == 'pending' %}
+              <span class="badge status-pill-pending">Awaiting approval</span>
+            {% elif payment.status == 'refunded' %}
+              <span class="badge status-pill-declined">Refunded</span>
+            {% else %}
+              <span class="badge status-pill-declined">{{ payment.status | capitalize }}</span>
+            {% endif %}
+            {% if payment.transaction_id and payment.status == 'completed' %}
+              <div class="mt-1">
+                <a href="{{ url_for('pos.receipt_pdf', transaction_id=payment.transaction_id) }}" target="_blank" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Receipt</a>
+                <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;"
+                        onclick="emailReceipt({{ payment.transaction_id }})">Email</button>
+                <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;"
+                        onclick="printReceipt({{ payment.transaction_id }})">Print</button>
+                <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;"
+                        onclick="smsReceipt({{ payment.transaction_id }})">SMS</button>
+                <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;"
+                        onclick="efdTransmit({{ payment.transaction_id }})">GRA</button>
+                {% if payment.transaction.status == 'completed' %}
+                  <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;"
+                          onclick="voidOrRefund({{ payment.transaction_id }}, 'void')">Void</button>
+                  <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;"
+                          onclick="voidOrRefund({{ payment.transaction_id }}, 'refund')">Refund</button>
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <p class="text-muted p-3 mb-0">No transactions yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-5 mb-4">
+    <h6 class="text-brand-slate">Low stock</h6>
+    <div class="cart-panel">
+      {% for product in low_stock %}
+        <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+          <span>{{ product.name }}</span>
+          <span class="badge status-pill-declined">{{ product.in_stock_qty | int }} left</span>
+        </div>
+      {% else %}
+        <p class="text-muted p-3 mb-0">All stock levels healthy.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<form id="void-refund-form" method="post" class="d-none">
+  <input type="hidden" name="reason" id="void-refund-reason">
+</form>
+
+<form id="email-receipt-form" method="post" class="d-none">
+  <input type="hidden" name="email" id="email-receipt-address">
+</form>
+
+<form id="print-receipt-form" method="post" class="d-none"></form>
+
+<form id="efd-form" method="post" class="d-none"></form>
+
+<form id="sms-receipt-form" method="post" class="d-none">
+  <input type="hidden" name="phone" id="sms-receipt-phone">
+</form>
+
+<script>
+function voidOrRefund(transactionId, action) {
+  const label = action === 'void' ? 'void' : 'refund';
+  const reason = prompt(`Reason to ${label} this transaction:`);
+  if (reason === null) return;
+  const form = document.getElementById('void-refund-form');
+  form.action = `/admin/transaction/${transactionId}/${action}`;
+  document.getElementById('void-refund-reason').value = reason;
+  form.submit();
+}
+
+function emailReceipt(transactionId) {
+  const email = prompt('Customer email address:');
+  if (!email) return;
+  const form = document.getElementById('email-receipt-form');
+  form.action = `/pos/receipt/${transactionId}/email`;
+  document.getElementById('email-receipt-address').value = email;
+  form.submit();
+}
+
+function printReceipt(transactionId) {
+  const form = document.getElementById('print-receipt-form');
+  form.action = `/pos/receipt/${transactionId}/print`;
+  form.submit();
+}
+
+function efdTransmit(transactionId) {
+  const form = document.getElementById('efd-form');
+  form.action = `/pos/receipt/${transactionId}/efd`;
+  form.submit();
+}
+
+function smsReceipt(transactionId) {
+  const phone = prompt('Customer phone number:');
+  if (!phone) return;
+  const form = document.getElementById('sms-receipt-form');
+  form.action = `/pos/receipt/${transactionId}/sms`;
+  document.getElementById('sms-receipt-phone').value = phone;
+  form.submit();
+}
+</script>
+{% endblock %}

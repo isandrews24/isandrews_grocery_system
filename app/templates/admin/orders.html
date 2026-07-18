@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Online orders &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">Online orders</h1>
+</div>
+
+<div class="d-flex flex-wrap gap-2 mb-3">
+  <a href="{{ url_for('admin.orders') }}" class="category-pill {{ 'active' if not status_filter }}">All</a>
+  {% for status, label in status_labels.items() %}
+    <a href="{{ url_for('admin.orders', status=status) }}" class="category-pill {{ 'active' if status_filter == status }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+<div class="cart-panel">
+  {% for order in orders %}
+    <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <p class="mb-0 fw-semibold">{{ order.order_number }} &middot; {{ order.customer.name }}</p>
+        <p class="mb-0 text-muted small">{{ order.delivery_method.replace('_', ' ') }} &middot; {{ order.placed_at.strftime('%Y-%m-%d %H:%M') }} &middot; {{ order.total_amount | ghs }}</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        {% if order.status == 'delivered' %}
+          <span class="badge status-pill-paid">{{ status_labels[order.status] }}</span>
+        {% elif order.status == 'cancelled' %}
+          <span class="badge status-pill-declined">{{ status_labels[order.status] }}</span>
+        {% else %}
+          <span class="badge status-pill-pending">{{ status_labels[order.status] }}</span>
+        {% endif %}
+        {% if order.payment_status != 'paid' %}
+          <span class="badge status-pill-declined">Unpaid</span>
+        {% endif %}
+        <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Manage</a>
+      </div>
+    </div>
+  {% else %}
+    <p class="text-muted p-3 mb-0">No orders in this view.</p>
+  {% endfor %}
+</div>
+{% endblock %}

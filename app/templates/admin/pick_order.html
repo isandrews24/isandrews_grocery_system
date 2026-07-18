@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Pick order {{ order.order_number }} &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h4 text-brand-slate mb-0">Pick order &middot; {{ order.order_number }}</h1>
+    <p class="text-muted small mb-0">Check off each item as you pull it from the shelf. Adjust the quantity if less is available.</p>
+  </div>
+  <a href="{{ url_for('admin.order_detail', order_id=order.id) }}" class="btn btn-outline-brand btn-sm">Back to order</a>
+</div>
+
+<form method="post">
+  <div class="cart-panel">
+    {% for item in order.items %}
+      <div class="d-flex align-items-center justify-content-between p-3 {{ 'border-bottom' if not loop.last }}">
+        <div class="d-flex align-items-center gap-3">
+          <input type="checkbox" class="form-check-input pick-checkbox" data-item-id="{{ item.id }}"
+                 {{ 'checked' if item.quantity_picked >= item.quantity }} style="width: 22px; height: 22px;">
+          <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" class="rounded" style="width: 48px; height: 48px; object-fit: cover;">
+          <div>
+            <p class="mb-0 fw-semibold">{{ item.product.name }}</p>
+            <p class="mb-0 text-muted small">{{ item.product.sku }} &middot; ordered {{ item.quantity }}</p>
+          </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <label class="small text-muted mb-0">Picked</label>
+          <input type="number" step="0.001" min="0" max="{{ item.quantity }}" name="picked_{{ item.id }}"
+                 id="picked-input-{{ item.id }}" class="form-control form-control-sm" style="width: 90px;"
+                 value="{{ item.quantity_picked }}" onchange="syncCheckbox({{ item.id }}, {{ item.quantity }})">
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <button type="submit" class="btn btn-brand w-100 mt-3">Save picks</button>
+</form>
+
+<script>
+document.querySelectorAll('.pick-checkbox').forEach(cb => {
+  cb.addEventListener('change', function() {
+    const id = this.dataset.itemId;
+    const input = document.getElementById(`picked-input-${id}`);
+    input.value = this.checked ? input.max : 0;
+  });
+});
+
+function syncCheckbox(itemId, orderedQty) {
+  const input = document.getElementById(`picked-input-${itemId}`);
+  const checkbox = document.querySelector(`.pick-checkbox[data-item-id="${itemId}"]`);
+  checkbox.checked = parseFloat(input.value) >= orderedQty;
+}
+</script>
+{% endblock %}

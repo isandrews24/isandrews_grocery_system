@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Your cart &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<h1 class="h4 text-brand-slate mb-4">Your cart</h1>
+
+{% if not lines %}
+  <p class="text-muted">Your cart is empty. <a href="{{ url_for('storefront.home') }}">Continue shopping</a>.</p>
+{% else %}
+  <div class="cart-panel p-3 mb-4">
+    {% for line in lines %}
+      <div class="d-flex align-items-center justify-content-between py-2 {{ 'border-bottom' if not loop.last }}">
+        <div class="d-flex align-items-center gap-3">
+          <img src="{{ line.product.image_url }}" alt="{{ line.product.name }}" class="rounded" style="width: 56px; height: 56px; object-fit: cover;">
+          <div>
+            <p class="mb-0 fw-semibold">{{ line.product.name }}</p>
+            <p class="mb-0 text-muted small">{{ line.product.unit_price | ghs }} each</p>
+          </div>
+        </div>
+        <form method="post" action="{{ url_for('storefront.update_cart', product_id=line.product.id) }}" class="d-flex align-items-center gap-2">
+          <input type="number" name="quantity" value="{{ line.quantity }}" min="0" class="form-control form-control-sm" style="width: 70px;">
+          <button type="submit" class="btn btn-outline-brand btn-sm">Update</button>
+        </form>
+        <span class="fw-bold" style="min-width: 90px; text-align: right;">{{ line.breakdown.line_total | ghs }}</span>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="row justify-content-end">
+    <div class="col-md-4">
+      <div class="cart-panel p-3">
+        <div class="d-flex justify-content-between small mb-1">
+          <span>Subtotal</span><span>{{ totals.subtotal | ghs }}</span>
+        </div>
+        <div class="d-flex justify-content-between small mb-2 text-muted">
+          <span>VAT + levies</span><span>{{ totals.tax | ghs }}</span>
+        </div>
+        <div class="d-flex justify-content-between fw-bold border-top pt-2 mb-3">
+          <span>Total</span><span>{{ totals.total | ghs }}</span>
+        </div>
+        <a href="{{ url_for('storefront.checkout') }}" class="btn btn-brand w-100">Checkout</a>
+      </div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

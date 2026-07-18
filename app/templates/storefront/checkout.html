@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Checkout &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<h1 class="h4 text-brand-slate mb-4">Checkout</h1>
+
+<div class="row">
+  <div class="col-lg-7 mb-4">
+    <form method="post" id="checkout-form">
+      <div class="cart-panel p-3 mb-3">
+        <h6 class="text-brand-slate">Your details</h6>
+        <div class="mb-2">
+          <label class="form-label small">Full name</label>
+          <input type="text" name="name" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">Email (optional)</label>
+          <input type="email" name="email" class="form-control">
+        </div>
+      </div>
+
+      <div class="cart-panel p-3 mb-3">
+        <h6 class="text-brand-slate">Delivery</h6>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="delivery_method" id="collect" value="click_and_collect" checked onclick="toggleDelivery(false)">
+          <label class="form-check-label" for="collect">Click and collect (free)</label>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="radio" name="delivery_method" id="delivery" value="home_delivery" onclick="toggleDelivery(true)">
+          <label class="form-check-label" for="delivery">Home delivery</label>
+        </div>
+        <div id="delivery-fields" class="d-none">
+          <div class="mb-2">
+            <label class="form-label small">Region</label>
+            <select name="region" class="form-select">
+              {% for region, fee in delivery_fees.items() %}
+                <option value="{{ region }}">{{ region }} ({{ fee | ghs }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label small">Delivery address</label>
+            <textarea name="address" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-panel mb-3 overflow-hidden">
+        <div class="momo-card-header d-flex align-items-center gap-2">
+          <i class="bi bi-phone-fill fs-5"></i>
+          <span class="fw-bold">Mobile Money Payment</span>
+        </div>
+        <div class="p-3">
+          <div class="btn-group w-100 mb-3" role="group">
+            {% for method, label in provider_labels.items() if method != 'cash' %}
+              <input type="radio" class="btn-check" name="payment_method" id="pm-{{ method }}" value="{{ method }}" {{ 'checked' if loop.first }} onclick="togglePhoneField(this.value)">
+              <label class="btn btn-outline-brand btn-sm" for="pm-{{ method }}">{{ label }}</label>
+            {% endfor %}
+          </div>
+
+          <div id="momo-phone-field">
+            <label class="form-label small">Mobile money number</label>
+            <div class="input-group mb-2">
+              <span class="input-group-text bg-light">+233</span>
+              <input type="tel" name="phone" id="momo-phone" class="form-control" pattern="[0-9]{9,10}" placeholder="24 XXX XXXX" required>
+            </div>
+          </div>
+
+          <div class="alert alert-warning py-2 px-3 small mb-0 d-flex align-items-start gap-2">
+            <i class="bi bi-info-circle mt-1"></i>
+            <span>You'll receive a USSD prompt on this number to approve payment &mdash; no internet needed on your handset. Make sure you have sufficient balance.</span>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-success w-100 py-2 fw-semibold" id="pay-submit-btn">
+        <i class="bi bi-phone me-1"></i> Pay with Mobile Money
+      </button>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="cart-panel p-3">
+      <h6 class="text-brand-slate mb-3">Order summary</h6>
+      {% for line in lines %}
+        <div class="d-flex align-items-center justify-content-between small mb-2">
+          <div class="d-flex align-items-center gap-2">
+            <img src="{{ line.product.image_url }}" alt="{{ line.product.name }}" class="rounded" style="width: 36px; height: 36px; object-fit: cover;">
+            <span>{{ line.quantity }} &times; {{ line.product.name }}</span>
+          </div>
+          <span>{{ line.breakdown.line_total | ghs }}</span>
+        </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between small border-top pt-2 mt-2">
+        <span>Subtotal</span><span>{{ totals.subtotal | ghs }}</span>
+      </div>
+      <div class="d-flex justify-content-between small text-muted mb-2">
+        <span>VAT + levies</span><span>{{ totals.tax | ghs }}</span>
+      </div>
+      <div class="d-flex justify-content-between fw-bold">
+        <span>Total</span><span id="grand-total">{{ totals.total | ghs }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleDelivery(show) {
+  document.getElementById('delivery-fields').classList.toggle('d-none', !show);
+}
+
+function togglePhoneField(method) {
+  const field = document.getElementById('momo-phone-field');
+  const phoneInput = document.getElementById('momo-phone');
+  const btn = document.getElementById('pay-submit-btn');
+  const isCard = method === 'paystack';
+
+  field.classList.toggle('d-none', isCard);
+  phoneInput.required = !isCard;
+
+  if (isCard) {
+    btn.innerHTML = '<i class="bi bi-credit-card me-1"></i> Pay with card';
+    btn.classList.remove('btn-success');
+    btn.classList.add('btn-brand');
+  } else {
+    btn.innerHTML = '<i class="bi bi-phone me-1"></i> Pay with Mobile Money';
+    btn.classList.remove('btn-brand');
+    btn.classList.add('btn-success');
+  }
+}
+
+document.getElementById('checkout-form').addEventListener('submit', function() {
+  const btn = document.getElementById('pay-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+});
+</script>
+{% endblock %}

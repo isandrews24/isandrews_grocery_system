@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% from "storefront/_macros.html" import stars %}
+{% block title %}{{ product.name }} &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<nav class="small text-muted mb-3">
+  <a href="{{ url_for('storefront.home') }}">Shop</a> /
+  <a href="{{ url_for('storefront.home', category_id=product.category_id) }}">{{ product.category.name if product.category else 'Products' }}</a> /
+  {{ product.name }}
+</nav>
+
+<div class="row g-4 mb-5">
+  <div class="col-lg-5">
+    <img src="{{ product.image_url }}" alt="{{ product.name }}" class="w-100 rounded-3">
+  </div>
+  <div class="col-lg-7">
+    <p class="text-muted small mb-1">{{ product.category.name if product.category else '' }}</p>
+    <h1 class="h3 text-brand-slate mb-2">{{ product.name }}</h1>
+
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <span class="text-warning">{{ stars(product.average_rating) }}</span>
+      {% if product.review_count %}
+        <span class="text-muted small">{{ product.average_rating }} ({{ product.review_count }} review{{ 's' if product.review_count != 1 }})</span>
+      {% else %}
+        <span class="text-muted small">No reviews yet</span>
+      {% endif %}
+    </div>
+
+    <p class="display-6 fw-bold mb-3">{{ product.unit_price | ghs }}</p>
+
+    {% if product.in_stock_qty > 0 %}
+      <span class="badge bg-success-subtle text-success mb-3">In stock &middot; {{ product.in_stock_qty | int }} available</span>
+    {% else %}
+      <span class="badge bg-danger-subtle text-danger mb-3">Out of stock</span>
+    {% endif %}
+
+    <p class="mb-4">{{ product.description or 'No description available for this product yet.' }}</p>
+
+    <form method="post" action="{{ url_for('storefront.add_to_cart', product_id=product.id) }}" class="d-flex gap-2" style="max-width: 320px;">
+      <input type="number" name="quantity" value="1" min="1" class="form-control" style="width: 90px;">
+      <button type="submit" class="btn btn-brand flex-fill" {{ 'disabled' if product.in_stock_qty <= 0 }}>
+        <i class="bi bi-cart-plus"></i> Add to cart
+      </button>
+    </form>
+  </div>
+</div>
+
+{% if similar_products %}
+<div class="mb-5">
+  <h2 class="h5 text-brand-slate mb-3">Compare similar products</h2>
+  <div class="table-responsive cart-panel p-3">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Product</th>
+          <th>Price</th>
+          <th>Rating</th>
+          <th>Stock</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="table-warning">
+          <td><img src="{{ product.image_url }}" alt="{{ product.name }}" style="width:48px;height:48px;object-fit:cover;" class="rounded"></td>
+          <td class="fw-semibold">{{ product.name }} <span class="badge badge-brand ms-1">Viewing</span></td>
+          <td>{{ product.unit_price | ghs }}</td>
+          <td class="text-warning">{{ stars(product.average_rating) }}</td>
+          <td>{{ product.in_stock_qty | int }}</td>
+          <td></td>
+        </tr>
+        {% for sp in similar_products %}
+          <tr>
+            <td><img src="{{ sp.image_url }}" alt="{{ sp.name }}" style="width:48px;height:48px;object-fit:cover;" class="rounded"></td>
+            <td>{{ sp.name }}</td>
+            <td>{{ sp.unit_price | ghs }}</td>
+            <td class="text-warning">{{ stars(sp.average_rating) }}</td>
+            <td>{{ sp.in_stock_qty | int }}</td>
+            <td><a href="{{ url_for('storefront.product_detail', product_id=sp.id) }}" class="btn btn-outline-brand btn-sm">View</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<div id="reviews" class="row g-4">
+  <div class="col-lg-7">
+    <h2 class="h5 text-brand-slate mb-3">Reviews ({{ product.review_count }})</h2>
+    <div class="cart-panel">
+      {% for review in reviews %}
+        <div class="p-3 {{ 'border-bottom' if not loop.last }}">
+          <div class="d-flex justify-content-between align-items-start">
+            <p class="mb-0 fw-semibold">{{ review.reviewer_name }}</p>
+            <span class="text-muted small">{{ review.created_at.strftime('%Y-%m-%d') }}</span>
+          </div>
+          <div class="text-warning small mb-1">{{ stars(review.rating) }}</div>
+          {% if review.comment %}<p class="mb-0 small">{{ review.comment }}</p>{% endif %}
+        </div>
+      {% else %}
+        <p class="text-muted p-3 mb-0">No reviews yet. Be the first to review this product.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <h2 class="h5 text-brand-slate mb-3">Write a review</h2>
+    <form method="post" action="{{ url_for('storefront.add_review', product_id=product.id) }}" class="cart-panel p-3">
+      <label class="form-label small">Your name</label>
+      <input type="text" name="reviewer_name" class="form-control mb-2" required>
+
+      <label class="form-label small">Rating</label>
+      <select name="rating" class="form-select mb-2" required>
+        <option value="5">5 - Excellent</option>
+        <option value="4">4 - Good</option>
+        <option value="3">3 - Average</option>
+        <option value="2">2 - Poor</option>
+        <option value="1">1 - Very poor</option>
+      </select>
+
+      <label class="form-label small">Comment (optional)</label>
+      <textarea name="comment" class="form-control mb-3" rows="3"></textarea>
+
+      <button type="submit" class="btn btn-brand w-100">Submit review</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

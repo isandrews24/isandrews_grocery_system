@@ -1,0 +1,29 @@
+databases:
+  - name: isandrews-grocery-db
+    databaseName: isandrewsgrocery
+    user: isandrewsgrocery
+    plan: free
+
+services:
+  - type: web
+    name: isandrews-grocery
+    runtime: python
+    buildCommand: pip install -r requirements.txt && flask db upgrade
+    startCommand: gunicorn run:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_APP
+        value: run.py
+      - key: DATABASE_URL
+        fromDatabase:
+          name: isandrews-grocery-db
+          property: connectionString
+      - key: STORE_NAME
+        value: isAndrews Grocery
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      # Optional - only needed once real credentials exist; everything runs
+      # in demo/suppressed mode until these are set (see .env.example):
+      # MTN_MOMO_API_KEY, VODAFONE_API_KEY, PAYSTACK_SECRET_KEY,
+      # MAIL_USERNAME, HUBTEL_SMS_CLIENT_ID, GRA_EFD_ENDPOINT, REDIS_URL

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} stock &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">{{ product.name }} &middot; stock by location</h1>
+  <a href="{{ url_for('inventory.products') }}" class="btn btn-outline-brand btn-sm">Back to products</a>
+</div>
+
+<div class="cart-panel">
+  {% for inv in product.inventories %}
+    <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <p class="mb-0 fw-semibold">{{ inv.location.name }}{% if inv.location.is_default %} <span class="badge badge-brand">Default</span>{% endif %}</p>
+        <p class="mb-0 text-muted small">Reorder level: {{ inv.reorder_level }}</p>
+      </div>
+      <span class="fw-bold">{{ inv.quantity_on_hand }}</span>
+    </div>
+  {% else %}
+    <p class="text-muted p-3 mb-0">No stock records for this product.</p>
+  {% endfor %}
+  <div class="d-flex justify-content-between align-items-center p-3 border-top">
+    <span class="fw-semibold">Total across all locations</span>
+    <span class="fw-bold">{{ product.in_stock_qty }}</span>
+  </div>
+</div>
+{% endblock %}

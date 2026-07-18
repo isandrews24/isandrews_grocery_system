@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Audit log &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">Audit log</h1>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-brand btn-sm">Back to dashboard</a>
+</div>
+
+<div class="cart-panel">
+  {% for entry in entries %}
+    <div class="d-flex justify-content-between align-items-start p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <p class="mb-0"><span class="fw-semibold">{{ entry.action }}</span> on {{ entry.table_name }} #{{ entry.record_id }}</p>
+        <p class="mb-0 text-muted small">
+          {{ entry.user.username if entry.user else 'system' }} &middot; {{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}
+          {% if entry.ip_address %} &middot; {{ entry.ip_address }}{% endif %}
+        </p>
+        {% if entry.new_values %}
+          <p class="mb-0 text-muted small">{{ entry.new_values }}</p>
+        {% endif %}
+      </div>
+    </div>
+  {% else %}
+    <p class="text-muted p-3 mb-0">No activity recorded yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}
