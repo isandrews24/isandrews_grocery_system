@@ -1,4 +1,8 @@
+import logging
+
 from flask import current_app
+
+logger = logging.getLogger(__name__)
 
 
 def is_live_configured():
@@ -34,7 +38,8 @@ def send_receipt_sms(phone_number, txn):
     #         "content": message,
     #     },
     # )
-    raise NotImplementedError("Live Hubtel SMS integration not yet wired up")
+    logger.warning("HUBTEL_SMS_CLIENT_ID is configured but live SMS sending isn't implemented yet - falling back to demo mode.")
+    return {"live": False, "message": message}
 
 
 def send_order_status_sms(order):
@@ -53,4 +58,5 @@ def send_order_status_sms(order):
     if not is_live_configured():
         return {"live": False, "message": message}
 
-    raise NotImplementedError("Live Hubtel SMS integration not yet wired up")
+    logger.warning("HUBTEL_SMS_CLIENT_ID is configured but live SMS sending isn't implemented yet - falling back to demo mode.")
+    return {"live": False, "message": message}

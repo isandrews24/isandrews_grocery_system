@@ -1,3 +1,4 @@
+import logging
 import random
 from datetime import datetime, timedelta
 
@@ -5,6 +6,8 @@ from flask import current_app
 from flask_mail import Message
 
 from app.services.mailer import safe_send
+
+logger = logging.getLogger(__name__)
 
 OTP_TTL_MINUTES = 10
 
@@ -42,7 +45,11 @@ def send_phone_otp(customer, code):
     if not current_app.config["HUBTEL_SMS_CLIENT_ID"]:
         return {"live": False, "message": message, "code": code}
 
-    raise NotImplementedError("Live Hubtel SMS integration not yet wired up")
+    # HUBTEL_SMS_CLIENT_ID is set but the live API call isn't wired up yet -
+    # fall back to demo mode instead of crashing the request that triggered
+    # this (e.g. account registration). See services/sms.py for the same gap.
+    logger.warning("HUBTEL_SMS_CLIENT_ID is configured but live SMS sending isn't implemented yet - falling back to demo mode.")
+    return {"live": False, "message": message, "code": code}
 
 
 def issue_email_otp(customer):
