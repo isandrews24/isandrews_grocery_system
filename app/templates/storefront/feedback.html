@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Feedback &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <h1 class="h4 text-brand-slate mb-2">Send us feedback</h1>
+    <p class="text-muted small mb-4">Tell us what's working, what's not, or what you'd like to see. We read every message.</p>
+
+    <form method="post" class="cart-panel p-4">
+      <div class="mb-3">
+        <label class="form-label small">Name (optional)</label>
+        <input type="text" name="name" class="form-control" {% if current_customer %}value="{{ current_customer.name }}"{% endif %}>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Email (optional)</label>
+        <input type="email" name="email" class="form-control" {% if current_customer %}value="{{ current_customer.email }}"{% endif %}>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">How would you rate your experience? (optional)</label>
+        <select name="rating" class="form-select">
+          <option value="">No rating</option>
+          <option value="5">5 - Excellent</option>
+          <option value="4">4 - Good</option>
+          <option value="3">3 - Okay</option>
+          <option value="2">2 - Poor</option>
+          <option value="1">1 - Very poor</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label small">Your feedback</label>
+        <textarea name="message" class="form-control" rows="5" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-brand w-100">Send feedback</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

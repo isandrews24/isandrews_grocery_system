@@ -23,6 +23,8 @@ class Config:
     STORE_TIN = os.environ.get("STORE_TIN", "")
     CURRENCY = "GHS"
 
+    FEEDBACK_EMAIL = os.environ.get("FEEDBACK_EMAIL", "innovation@is-andrews.com")
+
     VAT_RATE = float(os.environ.get("VAT_RATE", 15.0))
     NHIL_RATE = float(os.environ.get("NHIL_RATE", 2.5))
     GETFUND_RATE = float(os.environ.get("GETFUND_RATE", 2.5))

@@ -190,6 +190,7 @@ body {
   border-radius: 12px;
   border: 1px solid var(--brand-border);
   box-shadow: var(--shadow-sm);
+  color: var(--brand-text);
 }
 
 .display-total {

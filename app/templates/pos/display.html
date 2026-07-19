@@ -29,8 +29,13 @@
       itemsEl.innerHTML = '';
       data.items.forEach(item => {
         const row = document.createElement('div');
-        row.className = 'd-flex justify-content-between border-bottom py-2';
-        row.innerHTML = `<span>${item.quantity} &times; ${item.name}</span><span>${ghs(item.line_total)}</span>`;
+        row.className = 'd-flex align-items-center justify-content-between border-bottom py-2';
+        row.innerHTML = `
+          <div class="d-flex align-items-center gap-2">
+            <img src="${item.image_url || ''}" alt="${item.name}" class="rounded flex-shrink-0" style="width:44px;height:44px;object-fit:cover;">
+            <span>${item.quantity} &times; ${item.name}</span>
+          </div>
+          <span>${ghs(item.line_total)}</span>`;
         itemsEl.appendChild(row);
       });
       document.getElementById('total').textContent = ghs(data.total_amount);

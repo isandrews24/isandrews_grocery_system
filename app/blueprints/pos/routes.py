@@ -86,8 +86,10 @@ def _cart_payload(txn):
         "status": txn.status,
         "items": [
             {
+                "item_id": item.id,
                 "product_id": item.product_id,
                 "name": item.product.name,
+                "image_url": item.product.image_url,
                 "quantity": float(item.quantity),
                 "unit_price": float(item.unit_price),
                 "line_total": float(item.line_total),
@@ -159,6 +161,7 @@ def lookup_barcode(barcode):
     return jsonify({
         "id": product.id,
         "name": product.name,
+        "image_url": product.image_url,
         "unit_price": float(product.unit_price),
         "in_stock_qty": product.in_stock_qty,
     })
@@ -213,6 +216,18 @@ def modify_item(item_id):
             item.line_total = breakdown["line_total"]
             item.tax_amount = breakdown["total_tax"]
 
+    db.session.commit()
+    _recalc_transaction(draft)
+    return jsonify(_cart_payload(draft))
+
+
+@pos_bp.route("/api/cart/clear", methods=["POST"])
+@login_required
+def clear_cart():
+    pos_session = _get_or_open_session(current_user)
+    draft = _get_or_create_draft(pos_session)
+    for item in list(draft.items):
+        db.session.delete(item)
     db.session.commit()
     _recalc_transaction(draft)
     return jsonify(_cart_payload(draft))

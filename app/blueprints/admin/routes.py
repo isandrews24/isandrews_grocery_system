@@ -1,13 +1,14 @@
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
 from sqlalchemy import func
 
 from app.extensions import db
-from app.models import Transaction, OnlineOrder, Payment, Product, Inventory, AuditLog, Location
+from app.models import Transaction, OnlineOrder, Payment, Product, Inventory, AuditLog, Location, User, StaffInvite
 from app.blueprints.pos.routes import roles_required
 from app.services.audit import log_activity
+from app.services.staff_invite import generate_invite_token, send_staff_invite_email, INVITE_TTL_DAYS
 from app.tasks import sms_order_status
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin", template_folder="../../templates/admin")
@@ -283,3 +284,66 @@ def picking_slip(order_id):
 def audit_log():
     entries = AuditLog.query.order_by(AuditLog.created_at.desc()).limit(100).all()
     return render_template("admin/audit_log.html", entries=entries)
+
+
+# ---------- Staff ----------
+
+STAFF_ROLES = ("cashier", "inventory_manager", "online_manager", "admin")
+
+
+@admin_bp.route("/staff")
+@roles_required("admin", "superadmin")
+def staff():
+    users = User.query.order_by(User.full_name).all()
+    invites = StaffInvite.query.filter(StaffInvite.accepted_at.is_(None)).order_by(StaffInvite.created_at.desc()).all()
+    return render_template("admin/staff.html", users=users, invites=invites, staff_roles=STAFF_ROLES)
+
+
+@admin_bp.route("/staff/invite", methods=["POST"])
+@roles_required("admin", "superadmin")
+def invite_staff():
+    email = request.form.get("email", "").strip()
+    role = request.form.get("role", "cashier")
+
+    if not email:
+        flash("Enter an email address to invite.", "danger")
+        return redirect(url_for("admin.staff"))
+    if role not in STAFF_ROLES:
+        flash("Choose a valid role.", "danger")
+        return redirect(url_for("admin.staff"))
+    if User.query.filter_by(email=email).first():
+        flash("A staff account with that email already exists.", "danger")
+        return redirect(url_for("admin.staff"))
+    if StaffInvite.query.filter_by(email=email).filter(StaffInvite.accepted_at.is_(None)).first():
+        flash(f"An invite is already pending for {email}.", "warning")
+        return redirect(url_for("admin.staff"))
+
+    invite = StaffInvite(
+        email=email,
+        role=role,
+        token=generate_invite_token(),
+        invited_by=current_user.id,
+        expires_at=datetime.utcnow() + timedelta(days=INVITE_TTL_DAYS),
+    )
+    db.session.add(invite)
+    db.session.flush()
+    result = send_staff_invite_email(invite)
+    log_activity(current_user, "CREATE", "staff_invites", invite.id, new_values={"email": email, "role": role})
+    db.session.commit()
+
+    if result["live"]:
+        flash(f"Invite sent to {email}.", "success")
+    else:
+        flash(f"Demo mode: invite link for {email} is {result['accept_url']} (real email not sent - configure MAIL_USERNAME to send for real).", "info")
+    return redirect(url_for("admin.staff"))
+
+
+@admin_bp.route("/staff/invite/<int:invite_id>/revoke", methods=["POST"])
+@roles_required("admin", "superadmin")
+def revoke_invite(invite_id):
+    invite = StaffInvite.query.get_or_404(invite_id)
+    db.session.delete(invite)
+    log_activity(current_user, "DELETE", "staff_invites", invite_id, old_values={"email": invite.email})
+    db.session.commit()
+    flash("Invite revoked.", "success")
+    return redirect(url_for("admin.staff"))

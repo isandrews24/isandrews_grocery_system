@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Set up your account &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <div class="cart-panel p-4">
+      <h1 class="h5 text-brand-slate mb-1">Set up your account</h1>
+      <p class="text-muted small mb-3">You've been invited to join {{ store_name }} as a <strong>{{ invite.role.replace('_', ' ') }}</strong>. Email: {{ invite.email }}</p>
+      <form method="post">
+        <div class="mb-3">
+          <label class="form-label small">Full name</label>
+          <input type="text" name="full_name" class="form-control" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Username</label>
+          <input type="text" name="username" class="form-control" autofocus required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Password</label>
+          <input type="password" name="password" class="form-control" minlength="8" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label small">Confirm password</label>
+          <input type="password" name="confirm_password" class="form-control" minlength="8" required>
+        </div>
+        <button type="submit" class="btn btn-brand w-100">Create account</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

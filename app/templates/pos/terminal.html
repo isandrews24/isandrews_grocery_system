@@ -16,6 +16,10 @@
       <input type="text" id="barcode-input" class="form-control" placeholder="Scan barcode or type it and press Enter" autocomplete="off">
     </div>
     <div id="barcode-feedback" class="mb-2"></div>
+    <div class="input-group input-group-sm mb-2">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input type="text" id="product-search" class="form-control" placeholder="Search products by name&hellip;" autocomplete="off">
+    </div>
     <ul class="nav nav-pills mb-3">
       <li class="nav-item"><a class="nav-link active" href="#" data-category="">All</a></li>
       {% for cat in categories %}
@@ -24,7 +28,7 @@
     </ul>
     <div class="row row-cols-3 row-cols-md-4 g-2" id="product-grid">
       {% for product in products %}
-        <div class="col product-tile-wrap" data-category="{{ product.category_id or '' }}">
+        <div class="col product-tile-wrap" data-category="{{ product.category_id or '' }}" data-name="{{ product.name|lower }}">
           <button class="pos-tile btn w-100 h-100 d-flex flex-column align-items-center justify-content-center p-2"
                   data-product-id="{{ product.id }}" onclick="addItem({{ product.id }})">
             <span class="small fw-semibold">{{ product.name }}</span>
@@ -37,9 +41,12 @@
 
   <div class="col-lg-5">
     <div class="cart-panel p-3">
-      <div class="d-flex justify-content-between mb-2">
+      <div class="d-flex justify-content-between align-items-center mb-2">
         <span class="fw-semibold">Order</span>
-        <span class="text-muted small">{{ draft.transaction_number }}</span>
+        <div class="d-flex align-items-center gap-2">
+          <span class="text-muted small">{{ draft.transaction_number }}</span>
+          <button type="button" class="btn btn-outline-danger btn-sm py-0 px-2" style="font-size: 11px;" onclick="clearCart()">Clear</button>
+        </div>
       </div>
       <div id="cart-items"></div>
       <div class="border-top pt-2 mt-2">
@@ -74,8 +81,22 @@ function renderCart(data) {
   itemsEl.innerHTML = '';
   data.items.forEach(item => {
     const row = document.createElement('div');
-    row.className = 'd-flex justify-content-between align-items-center py-1 small';
-    row.innerHTML = `<span>${item.quantity} &times; ${item.name}</span><span>${ghs(item.line_total)}</span>`;
+    row.className = 'd-flex align-items-center justify-content-between py-2 border-bottom small';
+    row.innerHTML = `
+      <div class="d-flex align-items-center gap-2">
+        <img src="${item.image_url || ''}" alt="${item.name}" class="rounded flex-shrink-0" style="width:40px;height:40px;object-fit:cover;">
+        <div>
+          <div>${item.name}</div>
+          <div class="d-flex align-items-center gap-1 mt-1">
+            <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;" onclick="changeQty(${item.item_id}, ${item.quantity - 1})">&minus;</button>
+            <span class="mx-1">${item.quantity}</span>
+            <button type="button" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;" onclick="changeQty(${item.item_id}, ${item.quantity + 1})">+</button>
+            <button type="button" class="btn btn-link btn-sm text-danger py-0 px-1" onclick="removeItem(${item.item_id})" title="Remove"><i class="bi bi-trash"></i></button>
+          </div>
+        </div>
+      </div>
+      <span class="fw-semibold">${ghs(item.line_total)}</span>
+    `;
     itemsEl.appendChild(row);
   });
   document.getElementById('sum-subtotal').textContent = ghs(data.subtotal);
@@ -93,6 +114,26 @@ async function addItem(productId) {
   const res = await fetch(`${APP_ROOT}/pos/api/add/${productId}`, { method: 'POST' });
   const data = await res.json();
   renderCart(data);
+}
+
+async function changeQty(itemId, newQty) {
+  await fetch(`${APP_ROOT}/pos/api/item/${itemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ quantity: newQty }),
+  });
+  refreshCart();
+}
+
+async function removeItem(itemId) {
+  await fetch(`${APP_ROOT}/pos/api/item/${itemId}`, { method: 'DELETE' });
+  refreshCart();
+}
+
+async function clearCart() {
+  if (!confirm('Clear all items from this order?')) return;
+  await fetch(`${APP_ROOT}/pos/api/cart/clear`, { method: 'POST' });
+  refreshCart();
 }
 
 document.getElementById('payment-method').addEventListener('change', (e) => {
@@ -139,17 +180,29 @@ async function simulateApprove() {
   location.reload();
 }
 
+// Combined category + name-search filtering over the product grid.
+function applyFilters() {
+  const activeCategoryLink = document.querySelector('[data-category].active');
+  const category = activeCategoryLink ? activeCategoryLink.getAttribute('data-category') : '';
+  const query = document.getElementById('product-search').value.trim().toLowerCase();
+
+  document.querySelectorAll('.product-tile-wrap').forEach(tile => {
+    const matchesCategory = !category || tile.dataset.category === category;
+    const matchesSearch = !query || tile.dataset.name.includes(query);
+    tile.style.display = (matchesCategory && matchesSearch) ? '' : 'none';
+  });
+}
+
 document.querySelectorAll('[data-category]').forEach(link => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
     document.querySelectorAll('[data-category]').forEach(l => l.classList.remove('active'));
     link.classList.add('active');
-    const cat = link.getAttribute('data-category');
-    document.querySelectorAll('.product-tile-wrap').forEach(tile => {
-      tile.style.display = (!cat || tile.dataset.category === cat) ? '' : 'none';
-    });
+    applyFilters();
   });
 });
+
+document.getElementById('product-search').addEventListener('input', applyFilters);
 
 refreshCart();
 setInterval(refreshCart, 4000);
@@ -162,7 +215,11 @@ async function lookupProduct(barcode) {
     return;
   }
   const product = await res.json();
-  feedback.innerHTML = `<div class="alert alert-success py-1 px-2 small mb-0">Added ${product.name}.</div>`;
+  feedback.innerHTML = `
+    <div class="alert alert-success py-1 px-2 small mb-0 d-flex align-items-center gap-2">
+      <img src="${product.image_url || ''}" alt="${product.name}" class="rounded" style="width:28px;height:28px;object-fit:cover;">
+      <span>Added ${product.name}.</span>
+    </div>`;
   await addItem(product.id);
 }
 

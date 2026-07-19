@@ -25,6 +25,7 @@
       <div class="d-flex gap-3 small">
         <a href="https://www.isandrewsinnovation.com" target="_blank" rel="noopener"><i class="bi bi-globe"></i> www.isandrewsinnovation.com</a>
         <a href="{{ url_for('storefront.track_order') }}"><i class="bi bi-truck"></i> Track your order</a>
+        <a href="{{ url_for('storefront.feedback_form') }}"><i class="bi bi-chat-dots"></i> Feedback</a>
       </div>
     </div>
   </div>
@@ -60,6 +61,9 @@
               {% if current_user.role in ('admin', 'superadmin', 'online_manager') %}
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.orders') }}">Online orders</a></li>
               {% endif %}
+              {% if current_user.role in ('admin', 'superadmin') %}
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.staff') }}">Staff</a></li>
+              {% endif %}
               {% if current_user.role in ('admin', 'superadmin', 'inventory_manager') %}
                 <li class="nav-item dropdown">
                   <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Inventory</a>
@@ -83,6 +87,19 @@
       </div>
     </div>
   </nav>
+
+  {% if current_user.is_authenticated and request.blueprint == 'storefront' %}
+    <div class="container mb-3">
+      <div class="alert alert-secondary py-2 px-3 small d-flex justify-content-between align-items-center mb-0">
+        <span><i class="bi bi-person-badge"></i> You're viewing the customer shop as staff.</span>
+        {% if current_user.role == 'cashier' %}
+          <a href="{{ url_for('pos.terminal') }}" class="btn btn-brand btn-sm py-1">Back to POS</a>
+        {% else %}
+          <a href="{{ url_for('admin.dashboard') }}" class="btn btn-brand btn-sm py-1">Back to Dashboard</a>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
 
   <div class="container mb-5">
     {% with messages = get_flashed_messages(with_categories=true) %}

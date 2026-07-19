@@ -33,6 +33,41 @@ class User(UserMixin, db.Model):
         return self.role in roles
 
 
+class StaffInvite(db.Model):
+    __tablename__ = "staff_invites"
+
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(120), nullable=False)
+    role = db.Column(db.String(30), nullable=False, default="cashier")
+    token = db.Column(db.String(64), unique=True, nullable=False)
+    invited_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    accepted_at = db.Column(db.DateTime, nullable=True)
+
+    invited_by_user = db.relationship("User")
+
+    @property
+    def is_expired(self):
+        return datetime.utcnow() > self.expires_at
+
+    @property
+    def is_pending(self):
+        return not self.accepted_at and not self.is_expired
+
+
+class Feedback(db.Model):
+    __tablename__ = "feedback"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=True)
+    email = db.Column(db.String(255), nullable=True)
+    message = db.Column(db.Text, nullable=False)
+    rating = db.Column(db.Integer, nullable=True)
+    submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_read = db.Column(db.Boolean, nullable=False, default=False)
+
+
 class Category(db.Model):
     __tablename__ = "categories"
 

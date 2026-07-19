@@ -5,10 +5,11 @@ from datetime import datetime
 from flask import Blueprint, render_template, redirect, url_for, request, session, flash, jsonify, send_file
 
 from app.extensions import db
-from app.models import Product, Category, Customer, OnlineOrder, OnlineOrderItem, Payment, Review
+from app.models import Product, Category, Customer, OnlineOrder, OnlineOrderItem, Payment, Review, Feedback
 from app.services.tax import calculate_tax_breakdown, totals_for_cart
 from app.services.payments import initiate_payment, PROVIDER_LABELS
 from app.services.receipts import generate_online_order_receipt_pdf
+from app.services.feedback import send_feedback_notification
 from app.tasks import email_order_receipt as email_order_receipt_task
 from app.blueprints.account.routes import get_current_customer
 
@@ -290,3 +291,29 @@ def email_order_receipt(order_number):
     email_order_receipt_task.delay(order.id, to_email)
     flash(f"Receipt for {order.order_number} queued to send to {to_email} (processed in the background by Celery).", "success")
     return redirect(url_for("storefront.order_status", order_number=order_number))
+
+
+@storefront_bp.route("/feedback", methods=["GET", "POST"])
+def feedback_form():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip() or None
+        email = request.form.get("email", "").strip() or None
+        message = request.form.get("message", "").strip()
+        rating = request.form.get("rating", type=int)
+
+        if not message:
+            flash("Please enter your feedback message.", "danger")
+            return redirect(url_for("storefront.feedback_form"))
+
+        entry = Feedback(name=name, email=email, message=message, rating=rating)
+        db.session.add(entry)
+        db.session.commit()
+
+        live = send_feedback_notification(entry)
+        if live:
+            flash("Thanks for your feedback!", "success")
+        else:
+            flash("Thanks for your feedback! (Demo mode: no real email sent - configure MAIL_USERNAME to send for real.)", "success")
+        return redirect(url_for("storefront.home"))
+
+    return render_template("storefront/feedback.html")

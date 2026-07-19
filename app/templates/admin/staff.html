@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Staff &middot; {{ store_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h4 text-brand-slate mb-0">Staff</h1>
+  <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-brand btn-sm">Back to dashboard</a>
+</div>
+
+<div class="cart-panel p-3 mb-4">
+  <h6 class="text-brand-slate mb-3">Invite a new staff member</h6>
+  <form method="post" action="{{ url_for('admin.invite_staff') }}" class="row g-2 align-items-end">
+    <div class="col-md-6">
+      <label class="form-label small">Email</label>
+      <input type="email" name="email" class="form-control" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label small">Role</label>
+      <select name="role" class="form-select">
+        {% for role in staff_roles %}
+          <option value="{{ role }}" {{ 'selected' if role == 'cashier' }}>{{ role.replace('_', ' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-brand w-100">Send invite</button>
+    </div>
+  </form>
+</div>
+
+{% if invites %}
+<h2 class="h6 text-brand-slate mb-3">Pending invites</h2>
+<div class="cart-panel mb-4">
+  {% for invite in invites %}
+    <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <p class="mb-0 fw-semibold">{{ invite.email }}</p>
+        <p class="mb-0 text-muted small">
+          {{ invite.role.replace('_', ' ')|title }} &middot; invited {{ invite.created_at.strftime('%Y-%m-%d') }}
+          {% if invite.is_expired %}<span class="badge status-pill-declined ms-1">Expired</span>{% endif %}
+        </p>
+      </div>
+      <form method="post" action="{{ url_for('admin.revoke_invite', invite_id=invite.id) }}">
+        <button type="submit" class="btn btn-outline-brand btn-sm py-0 px-2" style="font-size: 11px;">Revoke</button>
+      </form>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<h2 class="h6 text-brand-slate mb-3">Staff accounts</h2>
+<div class="cart-panel">
+  {% for user in users %}
+    <div class="d-flex justify-content-between align-items-center p-3 {{ 'border-bottom' if not loop.last }}">
+      <div>
+        <p class="mb-0 fw-semibold">{{ user.full_name }}</p>
+        <p class="mb-0 text-muted small">{{ user.username }} &middot; {{ user.email }} &middot; {{ user.role.replace('_', ' ')|title }}</p>
+      </div>
+      {% if user.is_active_user %}
+        <span class="badge status-pill-paid">Active</span>
+      {% else %}
+        <span class="badge status-pill-declined">Inactive</span>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="text-muted p-3 mb-0">No staff accounts yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}
