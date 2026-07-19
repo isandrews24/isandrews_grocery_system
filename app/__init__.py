@@ -1,7 +1,24 @@
 from flask import Flask, session
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 from config import Config
 from app.extensions import db, login_manager, migrate, mail, celery_init_app
+
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragmas(dbapi_connection, connection_record):
+    """WAL mode lets readers (e.g. the customer display polling every 2s)
+    proceed without blocking a concurrent writer, and a longer busy_timeout
+    gives SQLite a chance to retry instead of immediately raising "database
+    is locked" under any contention. No-ops for non-SQLite connections.
+    """
+    if type(dbapi_connection).__module__.split(".")[0] != "sqlite3":
+        return
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA busy_timeout=15000")
+    cursor.close()
 
 
 def create_app(config_class=Config):
