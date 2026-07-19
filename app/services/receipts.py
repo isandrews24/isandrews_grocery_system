@@ -7,7 +7,7 @@ from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
-from app.extensions import mail
+from app.services.mailer import safe_send
 from app.services.qr import generate_qr_png
 
 
@@ -173,5 +173,4 @@ def send_receipt_email(to_email, receipt_number, pdf_buffer):
         body=f"Thank you for your purchase. Your receipt {receipt_number} is attached.",
     )
     msg.attach(f"{receipt_number}.pdf", "application/pdf", pdf_buffer.getvalue())
-    mail.send(msg)
-    return not current_app.config["MAIL_SUPPRESS_SEND"]
+    return safe_send(msg)

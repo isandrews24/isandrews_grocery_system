@@ -3,7 +3,7 @@ import secrets
 from flask import current_app, url_for
 from flask_mail import Message
 
-from app.extensions import mail
+from app.services.mailer import safe_send
 
 INVITE_TTL_DAYS = 7
 
@@ -30,5 +30,5 @@ def send_staff_invite_email(invite):
             f"This link expires in {INVITE_TTL_DAYS} days."
         ),
     )
-    mail.send(msg)
-    return {"live": not current_app.config["MAIL_SUPPRESS_SEND"], "accept_url": accept_url}
+    live = safe_send(msg)
+    return {"live": live, "accept_url": accept_url}

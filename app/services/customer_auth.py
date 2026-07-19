@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from flask import current_app
 from flask_mail import Message
 
-from app.extensions import mail
+from app.services.mailer import safe_send
 
 OTP_TTL_MINUTES = 10
 
@@ -26,8 +26,8 @@ def send_email_otp(customer, code):
         recipients=[customer.email],
         body=f"Your {store_name} email verification code is {code}. It expires in {OTP_TTL_MINUTES} minutes.",
     )
-    mail.send(msg)
-    return {"live": not current_app.config["MAIL_SUPPRESS_SEND"], "code": code}
+    live = safe_send(msg)
+    return {"live": live, "code": code}
 
 
 def send_phone_otp(customer, code):

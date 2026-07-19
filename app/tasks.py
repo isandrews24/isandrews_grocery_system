@@ -8,8 +8,9 @@ in an app context, so current_app/db/mail all work normally inside them.
 from flask import current_app
 from flask_mail import Message
 
-from app.extensions import celery_app, db, mail
+from app.extensions import celery_app, db
 from app.models import Transaction, OnlineOrder, Product, Inventory, Location, User
+from app.services.mailer import safe_send
 from app.services.receipts import generate_pos_receipt_pdf, generate_online_order_receipt_pdf, send_receipt_email
 from app.services.sms import send_receipt_sms, send_order_status_sms
 
@@ -85,5 +86,5 @@ def check_low_stock():
         recipients=recipients,
         body=f"The following products are at or below their reorder level:\n\n{lines}",
     )
-    mail.send(msg)
-    return {"sent": not current_app.config["MAIL_SUPPRESS_SEND"], "count": len(low_stock), "recipients": recipients}
+    sent = safe_send(msg)
+    return {"sent": sent, "count": len(low_stock), "recipients": recipients}

@@ -1,7 +1,7 @@
 from flask import current_app
 from flask_mail import Message
 
-from app.extensions import mail
+from app.services.mailer import safe_send
 
 
 def send_feedback_notification(entry):
@@ -22,5 +22,4 @@ def send_feedback_notification(entry):
             f"{entry.message}"
         ),
     )
-    mail.send(msg)
-    return not current_app.config["MAIL_SUPPRESS_SEND"]
+    return safe_send(msg)
