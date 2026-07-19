@@ -3,7 +3,7 @@ import string
 from datetime import datetime, date
 from urllib.parse import quote
 
-from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file
+from flask import Blueprint, render_template, redirect, url_for, request, flash, send_file, jsonify
 from flask_login import current_user
 
 from app.extensions import db
@@ -14,6 +14,7 @@ from app.models import (
 from app.blueprints.pos.routes import roles_required
 from app.services.audit import log_activity
 from app.services.qr import generate_qr_png
+from app.services.barcode_lookup import lookup_barcode
 
 
 def _default_location():
@@ -86,6 +87,19 @@ def new_product():
     return render_template("inventory/product_form.html", product=None, categories=categories_list)
 
 
+@inventory_bp.route("/products/barcode-lookup/<path:barcode>")
+@roles_required(*MANAGER_ROLES)
+def barcode_lookup(barcode):
+    existing = Product.query.filter_by(barcode_number=barcode).first()
+    if existing:
+        return jsonify({"found": False, "existing_product_id": existing.id, "existing_product_name": existing.name})
+
+    result = lookup_barcode(barcode)
+    if not result:
+        return jsonify({"found": False})
+    return jsonify({"found": True, **result})
+
+
 @inventory_bp.route("/products/<int:product_id>/edit", methods=["GET", "POST"])
 @roles_required(*MANAGER_ROLES)
 def edit_product(product_id):
@@ -144,6 +158,7 @@ def _save_product_form(product):
     product.barcode_number = request.form.get("barcode_number", "").strip() or None
     product.category_id = request.form.get("category_id", type=int) or None
     product.brand = request.form.get("brand", "").strip() or None
+    product.description = request.form.get("description", "").strip() or None
     product.unit_price = request.form.get("unit_price", 0, type=float)
     product.cost_price = request.form.get("cost_price", 0, type=float)
     product.tax_rate = request.form.get("tax_rate", 15.0, type=float)

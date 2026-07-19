@@ -9,15 +9,23 @@
 
 <div class="row justify-content-center">
   <div class="col-lg-7">
-    <form method="post" class="cart-panel p-4">
+    {% if not product %}
+    <div class="cart-panel p-3 mb-3">
+      <label class="form-label small mb-1">Scan barcode to auto-fill details</label>
+      <input type="text" id="scan-barcode-input" class="form-control form-control-lg" placeholder="Scan or type barcode, then press Enter" autocomplete="off" autofocus>
+      <div id="scan-status" class="form-text"></div>
+    </div>
+    {% endif %}
+    <form method="post" class="cart-panel p-4" id="product-form">
       <div class="row g-3">
         <div class="col-md-8">
           <label class="form-label small">Product name</label>
-          <input type="text" name="name" class="form-control" value="{{ product.name if product else '' }}" required>
+          <input type="text" name="name" id="field-name" class="form-control" value="{{ product.name if product else '' }}" required>
         </div>
         <div class="col-md-4">
           <label class="form-label small">SKU</label>
-          <input type="text" name="sku" class="form-control" value="{{ product.sku if product else '' }}" required>
+          <input type="text" name="sku" id="field-sku" class="form-control" value="{{ product.sku if product else '' }}" required>
+          <div class="form-text">Auto-filled from the barcode when you scan one. Type your own if the item has no barcode.</div>
         </div>
 
         <div class="col-md-6">
@@ -31,12 +39,21 @@
         </div>
         <div class="col-md-6">
           <label class="form-label small">Barcode</label>
-          <input type="text" name="barcode_number" class="form-control" value="{{ product.barcode_number if product else '' }}">
+          <input type="text" name="barcode_number" id="field-barcode" class="form-control" value="{{ product.barcode_number if product else '' }}">
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label small">Brand</label>
+          <input type="text" name="brand" id="field-brand" class="form-control" value="{{ product.brand if product else '' }}">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small">Description</label>
+          <input type="text" name="description" id="field-description" class="form-control" value="{{ product.description if product else '' }}">
         </div>
 
         <div class="col-12">
           <label class="form-label small">Image URL</label>
-          <input type="url" name="image_url" class="form-control" placeholder="https://..." value="{{ product.image_url if product else '' }}">
+          <input type="url" name="image_url" id="field-image_url" class="form-control" placeholder="https://..." value="{{ product.image_url if product else '' }}">
           <div class="form-text">Leave blank to use a generated placeholder image.</div>
         </div>
 
@@ -82,4 +99,63 @@
     </form>
   </div>
 </div>
+
+{% if not product %}
+<script>
+const scanInput = document.getElementById('scan-barcode-input');
+const scanStatus = document.getElementById('scan-status');
+
+function fillIfEmpty(id, value) {
+  const el = document.getElementById(id);
+  if (el && value && !el.value.trim()) el.value = value;
+}
+
+async function handleScan(barcode) {
+  document.getElementById('field-barcode').value = barcode;
+  fillIfEmpty('field-sku', barcode);
+
+  scanStatus.textContent = 'Looking up...';
+  try {
+    const res = await fetch(`${APP_ROOT}/inventory/products/barcode-lookup/${encodeURIComponent(barcode)}`);
+    const data = await res.json();
+
+    if (data.existing_product_id) {
+      scanStatus.innerHTML = `<span class="text-danger">This barcode already belongs to "${data.existing_product_name}". <a href="${APP_ROOT}/inventory/products/${data.existing_product_id}/edit">Edit it instead</a>.</span>`;
+      return;
+    }
+
+    if (!data.found) {
+      scanStatus.textContent = 'Not found in the product database — fill in the details manually.';
+      document.getElementById('field-name').focus();
+      return;
+    }
+
+    fillIfEmpty('field-name', data.name);
+    fillIfEmpty('field-brand', data.brand);
+    fillIfEmpty('field-description', data.description);
+    fillIfEmpty('field-image_url', data.image_url);
+    scanStatus.innerHTML = `<span class="text-success">Filled in details for "${data.name}". Just set the price and stock below.</span>`;
+    document.querySelector('input[name="unit_price"]').focus();
+  } catch (err) {
+    scanStatus.textContent = 'Lookup failed — fill in the details manually.';
+  }
+}
+
+scanInput.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === 'Tab') && scanInput.value.trim()) {
+    e.preventDefault();
+    handleScan(scanInput.value.trim());
+    scanInput.value = '';
+  }
+});
+
+scanInput.addEventListener('blur', () => {
+  if (scanInput.value.trim()) {
+    const barcode = scanInput.value.trim();
+    scanInput.value = '';
+    handleScan(barcode);
+  }
+});
+</script>
+{% endif %}
 {% endblock %}
