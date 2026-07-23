@@ -4,7 +4,7 @@ import string
 from datetime import datetime
 from functools import wraps
 
-from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_file
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required, current_user
 
 from app.extensions import db
@@ -321,6 +321,27 @@ def public_receipt_pdf(transaction_number):
     txn = Transaction.query.filter_by(transaction_number=transaction_number).first_or_404()
     buf = generate_pos_receipt_pdf(txn)
     return send_file(buf, mimetype="application/pdf", as_attachment=False, download_name=f"{txn.transaction_number}.pdf")
+
+
+@pos_bp.route("/receipt/<int:transaction_id>/print-view")
+@login_required
+def print_view(transaction_id):
+    """Browser-printable receipt sized for an 80mm thermal roll.
+
+    The Flask app runs on Render, with no network path to a printer plugged
+    into the till PC at the shop - so printing can't happen server-side.
+    Instead this renders in the cashier's own browser (which IS on the same
+    machine as the printer) and triggers window.print(), letting the OS/
+    printer driver handle the actual USB printing.
+    """
+    txn = Transaction.query.get_or_404(transaction_id)
+    return render_template(
+        "pos/receipt_print.html",
+        txn=txn,
+        store_name=current_app.config["STORE_NAME"],
+        store_tin=current_app.config["STORE_TIN"],
+        receipt_url=url_for("pos.public_receipt_pdf", transaction_number=txn.transaction_number, _external=True),
+    )
 
 
 @pos_bp.route("/receipt/<int:transaction_id>/email", methods=["POST"])

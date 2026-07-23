@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Receipt {{ txn.transaction_number }}</title>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  body {
+    width: 72mm;
+    margin: 0 auto;
+    padding: 3mm 4mm;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #000;
+  }
+  .center { text-align: center; }
+  .store-name { font-size: 16px; font-weight: bold; text-transform: uppercase; }
+  .muted { font-size: 10px; }
+  hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 1px 0; vertical-align: top; }
+  .qty-col { text-align: right; width: 15%; }
+  .price-col { text-align: right; width: 25%; }
+  .total-row td { font-weight: bold; font-size: 15px; padding-top: 4px; }
+  .thanks { font-size: 11px; margin-top: 8px; }
+  #print-controls { margin-top: 12px; }
+  #print-controls button { font-size: 13px; padding: 8px 14px; }
+  @media print {
+    #print-controls { display: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="center">
+    <div class="store-name">{{ store_name }}</div>
+    <div class="muted">Ghana | Prices in GHS</div>
+    {% if store_tin %}<div class="muted">TIN: {{ store_tin }}</div>{% endif %}
+  </div>
+  <hr>
+  <div>Receipt: {{ txn.transaction_number }}</div>
+  <div>Date: {{ txn.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+  <hr>
+  <table>
+    {% for item in txn.items %}
+    <tr>
+      <td colspan="3">{{ item.product.name }}</td>
+    </tr>
+    <tr>
+      <td></td>
+      <td class="qty-col">{{ '%g' % item.quantity }} x {{ '%.2f' % item.unit_price }}</td>
+      <td class="price-col">{{ '%.2f' % item.line_total }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  <hr>
+  <table>
+    <tr><td>Subtotal</td><td class="price-col">GHS {{ '%.2f' % txn.subtotal }}</td></tr>
+    <tr><td>VAT + levies</td><td class="price-col">GHS {{ '%.2f' % txn.tax_amount }}</td></tr>
+    {% if txn.discount_amount %}
+    <tr><td>Discount</td><td class="price-col">-GHS {{ '%.2f' % txn.discount_amount }}</td></tr>
+    {% endif %}
+    <tr class="total-row"><td>TOTAL</td><td class="price-col">GHS {{ '%.2f' % txn.total_amount }}</td></tr>
+  </table>
+  <hr>
+  <div>Paid via: {{ (txn.payment_method or '')|replace('_', ' ')|upper }}</div>
+  <div class="center thanks">
+    Thank you for shopping with us!<br>
+    Goods once sold are not returnable without this receipt.
+  </div>
+
+  <div class="center" id="print-controls">
+    <button onclick="window.print()">🖨️ Print</button>
+    <button onclick="window.close()">Close</button>
+  </div>
+
+  <script>
+    window.addEventListener('load', () => window.print());
+  </script>
+</body>
+</html>

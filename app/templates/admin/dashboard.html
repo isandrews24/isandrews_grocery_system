@@ -117,7 +117,6 @@
   <input type="hidden" name="email" id="email-receipt-address">
 </form>
 
-<form id="print-receipt-form" method="post" class="d-none"></form>
 
 <form id="efd-form" method="post" class="d-none"></form>
 
@@ -131,7 +130,7 @@ function voidOrRefund(transactionId, action) {
   const reason = prompt(`Reason to ${label} this transaction:`);
   if (reason === null) return;
   const form = document.getElementById('void-refund-form');
-  form.action = `/admin/transaction/${transactionId}/${action}`;
+  form.action = `${APP_ROOT}/admin/transaction/${transactionId}/${action}`;
   document.getElementById('void-refund-reason').value = reason;
   form.submit();
 }
@@ -140,20 +139,18 @@ function emailReceipt(transactionId) {
   const email = prompt('Customer email address:');
   if (!email) return;
   const form = document.getElementById('email-receipt-form');
-  form.action = `/pos/receipt/${transactionId}/email`;
+  form.action = `${APP_ROOT}/pos/receipt/${transactionId}/email`;
   document.getElementById('email-receipt-address').value = email;
   form.submit();
 }
 
 function printReceipt(transactionId) {
-  const form = document.getElementById('print-receipt-form');
-  form.action = `/pos/receipt/${transactionId}/print`;
-  form.submit();
+  window.open(`${APP_ROOT}/pos/receipt/${transactionId}/print-view`, '_blank');
 }
 
 function efdTransmit(transactionId) {
   const form = document.getElementById('efd-form');
-  form.action = `/pos/receipt/${transactionId}/efd`;
+  form.action = `${APP_ROOT}/pos/receipt/${transactionId}/efd`;
   form.submit();
 }
 
@@ -161,7 +158,7 @@ function smsReceipt(transactionId) {
   const phone = prompt('Customer phone number:');
   if (!phone) return;
   const form = document.getElementById('sms-receipt-form');
-  form.action = `/pos/receipt/${transactionId}/sms`;
+  form.action = `${APP_ROOT}/pos/receipt/${transactionId}/sms`;
   document.getElementById('sms-receipt-phone').value = phone;
   form.submit();
 }

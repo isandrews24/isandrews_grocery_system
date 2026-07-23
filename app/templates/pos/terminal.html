@@ -161,8 +161,11 @@ async function charge() {
   currentTransactionId = data.transaction_id;
 
   if (data.payment_status === 'completed') {
-    statusEl.innerHTML = `<div class="alert alert-success py-2 small mb-0">Payment received. Starting new order&hellip;</div>`;
-    setTimeout(() => location.reload(), 1500);
+    statusEl.innerHTML = `
+      <div class="alert alert-success py-2 small mb-2">Payment received for ${data.transaction.transaction_number}.</div>
+      <button type="button" class="btn btn-brand w-100 mb-2" onclick="printCurrentReceipt()"><i class="bi bi-printer"></i> Print receipt</button>
+      <button type="button" class="btn btn-outline-brand w-100" onclick="location.reload()">Start next sale</button>
+    `;
   } else {
     statusEl.innerHTML = `
       <div class="alert py-2 small mb-2 status-pill-pending">
@@ -172,6 +175,11 @@ async function charge() {
     `;
   }
   refreshCart();
+}
+
+function printCurrentReceipt() {
+  if (!currentTransactionId) return;
+  window.open(`${APP_ROOT}/pos/receipt/${currentTransactionId}/print-view`, '_blank');
 }
 
 async function simulateApprove() {
