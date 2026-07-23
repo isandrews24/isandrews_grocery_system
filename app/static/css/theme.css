@@ -154,6 +154,23 @@ body {
   color: var(--brand-text-inverse);
 }
 
+/* Persistent mobile cart icon (base.html) — sits next to the navbar-toggler so the
+   cart and its item count stay visible without opening the collapsed menu. */
+.cart-icon-mobile {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.cart-icon-mobile .cart-count-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  font-size: 0.65rem;
+  min-width: 18px;
+  line-height: 1.1;
+  padding: 2px 5px;
+}
+
 .section-tint {
   background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-light) 100%);
   color: var(--brand-text-inverse);
